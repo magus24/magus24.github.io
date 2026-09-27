@@ -13,6 +13,7 @@ import {
   RUN_PROVENANCE,
   RUN_TOTALS,
   SCENE,
+  groupInt,
 } from "@/lib/data";
 import type { EventLabel } from "@/lib/types";
 
@@ -234,8 +235,8 @@ function RiskProfiles() {
       <p className="mt-3 border-t border-line pt-3 font-mono text-[11px] leading-5 text-inkfaint">
         Window means peak at {EDA_RISK_SUMMARY.meanMax.toFixed(2)} — under the line — while
         individual frames reach {EDA_RISK_SUMMARY.peakMin.toFixed(2)}–
-        {EDA_RISK_SUMMARY.peakMax.toFixed(2)}: {EDA_RISK_SUMMARY.alarmedTotal.toLocaleString()} of{" "}
-        {EDA_RISK_SUMMARY.pointsTotal.toLocaleString()} frames (
+        {EDA_RISK_SUMMARY.peakMax.toFixed(2)}: {groupInt(EDA_RISK_SUMMARY.alarmedTotal)} of{" "}
+        {groupInt(EDA_RISK_SUMMARY.pointsTotal)} frames (
         {EDA_RISK_SUMMARY.alarmedShare}%) sit above 0.5. Risk here is spiky, not sustained.
       </p>
     </Card>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useLanguage } from "./LanguageContext";
-import { HACKATHON } from "@/lib/data";
+import { COPY_YEAR, HACKATHON } from "@/lib/data";
 
 export default function Footer() {
   const { t } = useLanguage();
@@ -18,7 +18,7 @@ export default function Footer() {
         </div>
         <p className="max-w-md text-xs leading-5 text-zinc-500">{t("footer.tagline")}</p>
         <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-zinc-600">
-          © {new Date().getFullYear()} · {HACKATHON.name}
+          © {COPY_YEAR} · {HACKATHON.name}
         </p>
       </div>
     </footer>

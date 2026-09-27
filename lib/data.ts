@@ -1467,6 +1467,22 @@ export function formatDuration(sec: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
+/**
+ * Thousands separator, deliberately NOT `toLocaleString()`.
+ *
+ * That call is the one thing on this page that rendered different text on the
+ * server than in the browser: Node's ICU and Chromium's disagree on the
+ * separator (comma vs U+00A0), and a visitor whose locale is de-DE gets a dot.
+ * React 418 - "server rendered text didn't match the client" - follows from it.
+ * A fixed comma is identical on both sides, for every locale, forever.
+ */
+export function groupInt(n: number): string {
+  return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+/** Build year, frozen at generation time: `new Date()` in the client is a hydration hazard. */
+export const COPY_YEAR = 2026;
+
 /** Label → readable display name (used for event chips/timelines). */
 export const EVENT_LABEL_TEXT: Record<string, string> = {
   accident: "Accident",
