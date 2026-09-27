@@ -651,10 +651,12 @@ export const FAILURE_CASES: FailureCase[] = [
 // ── Links ────────────────────────────────────────────────────────────────────
 // TODO(links): set the real repository URL once the repo is public.
 export const LINKS = {
-  repository: "https://github.com/",
-  weights: "https://github.com/",
-  predictions: "https://github.com/",
-  teamGithub: "https://github.com/",
+  repository: "https://github.com/magus24/wiut-cv-track",
+  weights: "https://github.com/magus24/wiut-cv-track/tree/main/weights",
+  predictions:
+    "https://github.com/magus24/wiut-cv-track/blob/main/predictions_samples.json",
+  // Per-member handles: still TODO together with TEAM below.
+  teamGithub: "https://github.com/magus24",
   teamLinkedin: "https://www.linkedin.com/",
 };
 
