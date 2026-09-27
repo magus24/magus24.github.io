@@ -22,7 +22,7 @@ const UZ_LABELS: Record<EventLabel, string> = {
   fire_smoke: "Olov / tutun",
 };
 
-const STATUS_ORDER: EventReadiness[] = ["active", "flagged", "prototype", "planned"];
+const STATUS_ORDER: EventReadiness[] = ["active", "blocked", "planned"];
 
 const STATUS_META: Record<
   EventReadiness,
@@ -35,19 +35,12 @@ const STATUS_META: Record<
     border: "border-emerald-300/30",
     panel: "from-emerald-300/15 via-emerald-300/5 to-transparent",
   },
-  flagged: {
-    labelKey: "events.flagged",
+  blocked: {
+    labelKey: "events.blocked",
     dot: "bg-amber-300",
     text: "text-amber-200",
     border: "border-amber-300/30",
     panel: "from-amber-300/15 via-amber-300/5 to-transparent",
-  },
-  prototype: {
-    labelKey: "events.prototype",
-    dot: "bg-violet-300",
-    text: "text-violet-200",
-    border: "border-violet-300/30",
-    panel: "from-violet-300/15 via-violet-300/5 to-transparent",
   },
   planned: {
     labelKey: "events.planned",
@@ -287,14 +280,14 @@ export default function EventCatalog() {
               <div className="grid min-w-[560px] grid-cols-5 gap-2">
                 {selectedReport.steps.map((step, index) => {
                   const done = index < selectedReport.completedSteps;
-                  const isFlagGate = selectedReport.readiness === "flagged" && index === 3;
+                  const isBlocker = index === selectedReport.blockerStep;
                   return (
                     <div key={step} className="relative">
                       {index < selectedReport.steps.length - 1 && <span className="absolute left-[calc(50%+18px)] right-[-8px] top-4 h-px bg-line" />}
-                      <div className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full border font-mono text-[10px] ${done ? `${selectedMeta.border} ${selectedMeta.text} bg-background` : "border-line text-zinc-600"}`}>
+                      <div className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full border font-mono text-[10px] ${done ? `${selectedMeta.border} ${selectedMeta.text} bg-background` : isBlocker ? "border-amber-300/50 text-amber-200" : "border-line text-zinc-600"}`}>
                         {done ? "✓" : index + 1}
                       </div>
-                      <p className={`mt-3 pr-2 text-[11px] leading-4 ${isFlagGate ? "text-amber-200" : "text-zinc-500"}`}>{step}</p>
+                      <p className={`mt-3 pr-2 text-[11px] leading-4 ${isBlocker ? "text-amber-200" : "text-zinc-500"}`}>{step}</p>
                     </div>
                   );
                 })}

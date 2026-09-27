@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import type { EventLabel, EventSeg, RiskPoint } from "@/lib/types";
-import { EVENT_REPORTS, RUN_FACTS, formatDuration } from "@/lib/data";
+import { EVENT_REPORTS, RUN_PER_CLASS, RUN_TOTALS, formatDuration } from "@/lib/data";
 
 /* ─── Reusable layout primitives ─────────────────────────────────────────── */
 
@@ -113,22 +113,21 @@ export function Pill({
 /**
  * Previously all fourteen classes got their own pastel at a similar saturation,
  * which asserted that fourteen detectors are equally alive. The measured run
- * says the opposite: four of them fire for almost the entire clip, and two are
- * structurally inert. So colour is derived from what the class actually DID on
- * C3905, and it updates itself whenever the predictions are regenerated.
+ * says the opposite: four of them fire for almost the entire footage, and five
+ * are structurally silent. So colour is derived from what each class actually
+ * did across all four clips, and it updates itself whenever the predictions are
+ * regenerated.
  */
 export type Verdict = "saturating" | "brief" | "silent";
 
-const RUN_DURATION = RUN_FACTS.durationSec;
-const PER_CLASS = RUN_FACTS.perClass as Record<
-  string,
-  { segments: number; seconds: number }
->;
+/** Total measured footage: 340 + 318 + 318 + 128 s. */
+const RUN_SECONDS = RUN_TOTALS.durationSec;
+const PER_CLASS = RUN_PER_CLASS;
 
 export function verdictOf(label: string): Verdict {
   const measured = PER_CLASS[label];
   if (!measured || measured.segments === 0) return "silent";
-  return measured.seconds / RUN_DURATION >= 0.25 ? "saturating" : "brief";
+  return measured.seconds / RUN_SECONDS >= 0.25 ? "saturating" : "brief";
 }
 
 export const VERDICT_COLORS: Record<Verdict, { bar: string; chip: string }> = {

@@ -34,9 +34,14 @@ function VideoPanel({ video }: { video: SampleVideo }) {
             {video.resolution} · {video.lighting}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Pill tone="green">{video.events.length} events</Pill>
           <Pill tone="slate">{video.id}</Pill>
+          {video.annotatedMB > 0 && (
+            <Pill tone="slate">
+              720p · {video.annotatedMB} MB
+            </Pill>
+          )}
         </div>
       </div>
 
@@ -47,8 +52,10 @@ function VideoPanel({ video }: { video: SampleVideo }) {
             <video
               ref={ref}
               src={video.file}
+              poster={video.poster}
               controls
-              preload="metadata"
+              preload="none"
+              playsInline
               className="aspect-video w-full rounded-xl border border-line bg-black"
             />
           ) : (
@@ -169,6 +176,8 @@ export default function Results() {
       subtitle={t("results.subtitle")}
       className="border-t border-line"
     >
+      <p className="mb-6 max-w-[70ch] text-sm leading-6 text-inkfaint">{t("results.renderNote")}</p>
+
       <div className="space-y-6">
         {SAMPLE_VIDEOS.map((v) => (
           <VideoPanel key={v.id} video={v} />

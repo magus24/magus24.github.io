@@ -1,6 +1,6 @@
 "use client";
 
-import { RUN_FACTS, SAMPLE_VIDEOS } from "@/lib/data";
+import { RUN_FACTS, RUN_TOTALS, SAMPLE_VIDEOS } from "@/lib/data";
 import { VERDICT_COLORS, verdictOf } from "./charts";
 import { useLanguage } from "./LanguageContext";
 
@@ -178,9 +178,9 @@ function MeasuredRun() {
 
       <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded border border-line bg-line sm:grid-cols-4">
         {[
-          { k: "2.28×", v: t("hero.wallTime"), tone: "text-foreground" },
+          { k: `${RUN_TOTALS.realtimeFactor.toFixed(2)}×`, v: t("hero.wallTime"), tone: "text-foreground" },
           { k: "3×", v: t("hero.budget"), tone: "text-foreground" },
-          { k: String(RUN_FACTS.framesAlarmed), v: t("hero.alarmed"), tone: "text-signal" },
+          { k: `${RUN_TOTALS.alarmedShare.toFixed(1)}%`, v: t("hero.alarmed"), tone: "text-signal" },
           { k: "4", v: t("hero.saturating"), tone: "text-alarm" },
         ].map((cell) => (
           <div key={cell.v} className="bg-surface px-3 py-2.5">

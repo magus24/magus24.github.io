@@ -42,17 +42,23 @@ function MemberCard({
           { href: m.github, label: t("team.github"), icon: "G" },
           { href: m.linkedin, label: t("team.linkedin"), icon: "in" },
           { href: m.portfolio, label: t("team.portfolio"), icon: "↗" },
-        ].map((l) => (
-          <a
-            key={l.label}
-            href={l.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-surface2 px-3 font-mono text-xs text-zinc-300 transition-colors hover:border-zinc-600"
-          >
-            {l.label}
-          </a>
-        ))}
+        ]
+          // Only render links the member actually supplied. The three of us
+          // share one GitHub account and gave no personal profiles, so an empty
+          // string must not become href="" — that reloads the page and looks
+          // like a broken button.
+          .filter((l) => Boolean(l.href))
+          .map((l) => (
+            <a
+              key={l.label}
+              href={l.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-surface2 px-3 font-mono text-xs text-zinc-300 transition-colors hover:border-zinc-600"
+            >
+              {l.label}
+            </a>
+          ))}
       </div>
     </Card>
   );

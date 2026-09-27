@@ -27,7 +27,7 @@ export default function Problem() {
           <p>{t("problem.p2")}</p>
           <div className="flex items-center gap-3 pt-2 font-mono text-xs uppercase tracking-[0.2em] text-cyan-300/80">
             <span className="h-px w-10 bg-cyan-300/50" />
-            {t("hero.radarCaption")}
+            {t("problem.tag")}
           </div>
         </div>
 

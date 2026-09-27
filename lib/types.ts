@@ -19,7 +19,7 @@ export const EVENT_CLASSES = [
 ] as const;
 
 export type EventLabel = (typeof EVENT_CLASSES)[number];
-export type EventReadiness = "active" | "flagged" | "prototype" | "planned";
+export type EventReadiness = "active" | "blocked" | "planned";
 
 export interface EventReport {
   label: EventLabel;
@@ -32,6 +32,7 @@ export interface EventReport {
   source: string;
   steps: string[];
   completedSteps: number;
+  blockerStep: number;
 }
 
 export interface EventSeg {
@@ -47,15 +48,81 @@ export interface VideoMeta {
   title: string;
   duration: number; // seconds
   fps: number;
-  resolution: string; // "1920×1080"
+  resolution: string; // "3840×2160"
   lighting: string;
   file?: string; // path of the video in /public (empty → placeholder)
   annotatedVideo?: string; // path of the rendered annotated video in /public
+  poster?: string; // poster frame, shown before the video is played
+}
+
+/** What one clip contributed in the measured run, straight from its log entry. */
+export interface VideoRun {
+  events: number;
+  classes: number;
+  riskPoints: number;
+  riskMax: number;
+  riskMean: number;
+  framesAlarmed: number;
+  partASec: number;
+  budgetSec: number;
+  /** Part A wall time as a percentage of the 3× budget. */
+  budgetUsed: number;
 }
 
 export interface SampleVideo extends VideoMeta {
   events: EventSeg[];
   risk: RiskPoint[];
+  run: VideoRun;
+  /** Mean luma of the sampled frames, 0-255. */
+  luma: number;
+  /** Mean Laplacian variance: a proxy for how sharp the footage is. */
+  sharpness: number;
+  /** Size of the 720p annotated render in MB. */
+  annotatedMB: number;
+  /** null when the clip decodes cleanly end to end. */
+  decodeNote: string | null;
+}
+
+/** One clip's line in the cross-clip comparison: the same numbers as VideoRun, plus identity. */
+export interface RunSummary {
+  id: string;
+  title: string;
+  duration: number;
+  events: number;
+  classes: number;
+  riskPoints: number;
+  riskMax: number;
+  riskMean: number;
+  framesAlarmed: number;
+  partASec: number;
+  budgetSec: number;
+  budgetUsed: number;
+  /** path of the 720p annotated render in /public */
+  render: string;
+  /** poster frame in /public */
+  poster: string;
+}
+
+/** One row of the per-class matrix: segment counts and coverage per clip. */
+export interface ClassMatrixRow {
+  label: EventLabel;
+  /** Segment count per clip, in CLIP_ORDER. */
+  segments: number[];
+  /** Share of that clip's duration, in percent. */
+  coverage: number[];
+  totalSegments: number;
+  totalSeconds: number;
+}
+
+/** Mean Part B risk over one window of a clip; t is a fraction of the clip. */
+export interface RiskProfilePoint {
+  t: number;
+  v: number;
+}
+
+export interface RiskProfile {
+  title: string;
+  points: RiskProfilePoint[];
 }
 
 export interface TeamMember {

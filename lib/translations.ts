@@ -30,9 +30,9 @@ const en = {
     radarLabel: "Event readiness radar",
     radarCaption: "A wiring map, not a confidence score",
     axisNote: "seconds of the clip, measured",
-    wallTime: "wall time to analyse, 2.28× the clip",
-    budget: "budget the metric allows",
-    alarmed: "frames above the alarm threshold",
+    wallTime: "wall time to analyse all four clips, against their length",
+    alarmed: "frames above the alarm threshold, all four clips",
+
     saturating: "detectors covering most of the clip",
     feed: {
       camera: "CAM-01 · FIXED VIEW",
@@ -48,11 +48,10 @@ const en = {
     kicker: "Event readiness",
     title: "Fourteen channels. One honest system map.",
     subtitle:
-      "Every official class has a place in the product. Select a channel to see what is wired, what is flag-gated, and what still needs engineering.",
-    active: "Ready by default",
-    flagged: "Ready behind a flag",
-    prototype: "Prototype, not wired",
-    planned: "Not implemented",
+      "Every official class has a place in the product. Select a channel to see which provider serves it, whether it fired on real footage, and what still needs engineering.",
+    active: "Fired on this footage",
+    blocked: "Wired, but cannot fire",
+    planned: "No provider constructed",
     allChannels: "official channels",
     selected: "Selected channel",
     status: "Status",
@@ -65,13 +64,14 @@ const en = {
     openDemo: "Open live demo",
     seeArchitecture: "See architecture",
     pathNote:
-      "Green nodes are active in the default path; amber nodes need a flag or calibrated scene data.",
+      "Statuses are read off the measured run, not declared: green fired on the footage, amber is allocated but a missing prerequisite stops it, red has no provider constructed at all.",
   },
   problem: {
     kicker: "Problem",
     title: "Fixed cameras, endless footage, missed events",
     p1: "Fixed CCTV cameras generate a continuous stream of video around the clock, but manually identifying traffic violations, dangerous situations and accidents is slow and unreliable.",
     p2: "By the time an operator spots the incident, the reaction window is already gone. Our goal is to close that gap with an automated perceptual system.",
+    tag: "Detection has to happen in seconds, not in shifts",
     chain: {
       c1: "CCTV",
       c2: "Huge amount of video",
@@ -118,19 +118,37 @@ const en = {
     kicker: "Exploratory Data Analysis",
     title: "What the camera actually shows",
     subtitle:
-      "We studied the sample videos not to count frames, but to find patterns that shaped the architecture.",
-    videoStats: "Video statistics",
-    objectStats: "Detected events over time (C3905)",
-    heatmap: "Motion heatmap",
-    trajectories: "Vehicle trajectories",
-    lanes: "Lane directions",
-    lanesSource: "2 lanes · from scene_config.json",
-    density: "Accident-risk profile (Part B output)",
-    schematic: "Schematic illustration — not measured data",
+      "Four clips, eighteen minutes, one camera. Everything on this page is measured on that footage — and the parts that look bad are the reason the architecture looks the way it does.",
+    videoStats: "The four clips, as measured",
+    classMatrix: "Which detectors actually fire",
+    classMatrixNote:
+      "Segments per clip, and the share of that clip they cover. Colour is the measured verdict, not a hue per class.",
+    riskProfiles: "Risk across the whole footage",
+    riskProfilesNote:
+      "Mean Part B risk per eighth of each clip. The dashed line is the alarm threshold the harness scores at.",
+    sceneMap: "The calibrated scene",
+    sceneMapNote: "Drawn to scale from the real polygons, 3840×2160.",
     decisions: "EDA → Design decisions",
     finding: "Finding",
     decision: "Decision",
-    note: "Every number on this page is measured: video specs from a cv2 probe of the four organizer clips, events and the risk curve straight from predictions_samples.json, lane headings from scene_config.json. The two illustrations are labelled schematic — we have no per-pixel motion field, so a real heatmap would be a fabrication.",
+    provenance: "Where these numbers come from",
+    verdictSaturating: "Saturating",
+    verdictBrief: "Brief",
+    verdictSilent: "Silent",
+    colVideo: "Clip",
+    colResolution: "Resolution",
+    colFps: "FPS",
+    colDuration: "Duration",
+    colLight: "Light",
+    colEvents: "Events",
+    colClasses: "Classes",
+    colRiskMax: "Risk max",
+    colRiskMean: "Risk mean",
+    colAlarmed: "Frames ≥ 0.5",
+    colPartA: "Part A",
+    colBudget: "Budget",
+    schematic: "Schematic illustration — not measured data",
+    note: "Clip specs come from a sequential cv2 pass over the four 4K originals; events and the risk curve come from one run of our own pipeline over all four clips; lane and crossing geometry comes from scene_config.json. The earlier illustrations on this page were hand-drawn schematics — they are gone, because a schematic next to real measurements is an argument, not evidence.",
   },
   results: {
     kicker: "Results",
@@ -144,8 +162,9 @@ const en = {
     riskCurve: "Accident risk curve",
     riskNotRun: "Part B (risk curve) not implemented yet.",
     clickToJump: "Click an event to jump the video",
-    videoPending:
-      "Annotated videos are rendered by our own tooling and will be published here.",
+    videoPending: "This clip has no annotated render yet.",
+    renderNote:
+      "Full 720p annotated renders, not excerpts — one per clip, straight from the run below. The files are large, so nothing loads until you press play.",
     failureTitle: "Failure cases",
     failureSub: "Honest cases where the system got it wrong.",
     expected: "Expected",
@@ -172,7 +191,7 @@ const en = {
     },
     recorded: {
       badge: "RECORDED RUN",
-      body: "Not a live query: this is the actual output our pipeline produced on C3905.MP4, read straight out of predictions_samples.json - the same 14 event segments and the Part B risk curve a live request returns. Upload a clip yourself once the backend is running.",
+      body: "Not a live query: this is the actual output our pipeline produced on C3905.MP4, read straight out of the run behind every number on this page — the same event segments and the Part B risk curve a live request returns. Upload a clip yourself once the backend is running.",
     },
     errors: {
       noFile: "Please select a video first.",
@@ -203,15 +222,15 @@ const en = {
       next: "Next steps",
     },
     built:
-      "The current submission runs a YOLO11x + ByteTrack pipeline and a legacy rule engine. Five classes are enabled by default; dedicated PHASE detectors are available behind a feature flag, and Part B is a causal zero-score stub.",
+      "One pipeline, all fourteen classes registered. A single provider table (5 legacy rule engines, 6 calibrated-geometry detectors, 3 deliberately unallocated) makes double-reporting a class impossible by construction. Part B is a real causal risk estimator: three max-aggregated channels — TTC, hard braking, pedestrian approach — shaped by one asymmetric EMA.",
     arch:
-      "Frames are decoded, detections are tracked, scene rules and temporal cleanup produce event segments. Dedicated modules exist, but not all are registered in the production event pool.",
+      "Frames are decoded, YOLO11x detects, ByteTrack associates, then a per-label provider turns trajectories into segments. Geometry comes from one calibrated scene_config.json shared by every clip. The submission is budget-guarded: 3× duration for Part A + Part B together, events and risk both voided if it is exceeded.",
     worked:
-      "The fixed-camera pipeline, tracker reset path, event postprocessing and website wiring can run end-to-end. The current development run produced diagnostic segments for four legacy event classes.",
+      "The full run over all four clips: 107 segments from 18 minutes of 4K footage, Part A at 23–25% of the budget on every clip with no errors, risk peaking at 0.64–0.89 with 12.6% of frames above the alarm threshold, and 731 tests passing. Segment merging, the blip floor and same-class overlap removal all do measurable work — congestion lands at 87 s across four clips instead of covering them.",
     failed:
-      "Accident, red-light, solid-line and stop-line production wiring is still incomplete. Scene geometry is not authoritative, traffic-light state is unknown, and the risk estimator currently returns 0.0.",
+      "Four classes saturate: near_miss (83% of all footage), wrong_way and jaywalking (100% on every clip), failure_to_yield (86%). Without labels we cannot tell misdetection from a loose gate, and the metric punishes both — a class predicted but absent from ground truth scores F1=0 and joins the macro mean. C3902 also has a broken access unit that our production VideoReader truncates on, losing 179 s.",
     next:
-      "Connect the standalone detectors, calibrate the shared scene geometry, add a signal-state classifier, validate event boundaries against labelled clips, and train a causal risk model.",
+      "Move wrong_way onto the per-lane expected_direction detector, add the missing discriminative condition to the three co-presence gates, make VideoReader seek-recover, build a signal-state classifier so red_light and stop_line stop being structurally silent, and — the only real fix — get labelled clips to tune any of it against.",
   },
   team: {
     kicker: "Team",
@@ -274,9 +293,9 @@ const uz: Dict = {
     radarLabel: "Hodisa tayyorlik radarsı",
     radarCaption: "Ishonch darajasi emas, wiring xaritasi",
     axisNote: "klipning soniyalari, o'lchangan",
-    wallTime: "tahlil qilish vaqti, klipning 2.28 barishi",
-    budget: "metrika beradigan byudjet",
-    alarmed: "alarm chegarasidan yuqori kadrlar",
+    wallTime: "tahlil qilish vaqti, to'rtta klip bo'yicha, ularning uzunligiga nisbatan",
+    alarmed: "alarm chegarasidan yuqori kadrlar, to'rtta klip bo'yicha",
+
     saturating: "klipning ko'p qismini qoplagan detektorlar",
     feed: {
       camera: "KAM-01 · STATSIONAR KO'RINISH",
@@ -292,11 +311,10 @@ const uz: Dict = {
     kicker: "Hodisa tayyorligi",
     title: "14 kanal. Bitta aniq tizim xaritasi.",
     subtitle:
-      "Har bir rasmiy sinf mahsulotda o'z o'rniga ega. Kanalni tanlang: wiring, flag va keyingi muhandislik ishlari ko'rinadi.",
-    active: "Standart yo'lda tayyor",
-    flagged: "Flag orqali tayyor",
-    prototype: "Prototip, ulanmagan",
-    planned: "Bajarilmagan",
+      "Har bir rasmiy sinf haqiqiy yuguruvga ulangan. Kanalni tanlang: provayder, o'z ishiga tushish hollati va keyingi muhandislik ishlari ko'rinadi.",
+    active: "Shu klipda signal berdi",
+    blocked: "Ulangan, lekin ishlay olmaydi",
+    planned: "Provayder umuman qurilmaydi",
     allChannels: "rasmiy kanal",
     selected: "Tanlangan kanal",
     status: "Holat",
@@ -309,13 +327,14 @@ const uz: Dict = {
     openDemo: "Live Demo ochish",
     seeArchitecture: "Arxitekturani ko'rish",
     pathNote:
-      "Yashil tugunlar standart yo'lda faol; sariq tugunlar flag yoki kalibrlangan sahna ma'lumotini talab qiladi.",
+      "Holatlar o'lchangan yuguruvdan olinadi, ko'rib chiqilmaydi: yashil — videoda signal berdi, sariq — ulangan, lekin yetishmaydigan shart to'xtatadi, qizil — provayder umuman qurilmaydi.",
   },
   problem: {
     kicker: "Muammo",
     title: "Statsionar kameralar, cheksiz video, o'tkazib yuborilgan hodisalar",
     p1: "Statsionar CCTV kameralar kecha-yu kunduz to'xtovsiz video oqimini yaratadi, ammo yo'l harakati qoidabuzarliklari, xavfli vaziyatlar va avariyalarni qo'lda aniqlash sekin va ishonchsizdir.",
     p2: "Operator voqeani payqaganida, reaksiya imkoniyati allaqachon yo'qolgan bo'ladi. Bizning maqsadimiz — bu bo'shliqni avtomatlashtirilgan idrok tizimi bilan yopish.",
+    tag: "Aniqlash soniyalar ichida bo'lishi kerak, smenada emas",
     chain: {
       c1: "CCTV",
       c2: "Katta hajmdagi video",
@@ -363,18 +382,36 @@ const uz: Dict = {
     title: "Kamera aslida nimani ko'rsatadi",
     subtitle:
       "Biz namuna videolarni kadr sanash uchun emas, arxitekturani shakllantirgan qonuniyatlarni topish uchun o'rgandik.",
-    videoStats: "Video statistikasi",
-    objectStats: "Aniqlangan hodisalar vaqt bo'yicha (C3905)",
-    heatmap: "Harakat heatmap'i",
-    trajectories: "Avtomobil traektoriyalari",
-    lanes: "Yo'l yo'nalishlari",
-    lanesSource: "2 ta yo'l · scene_config.json dan",
-    density: "Avariya xavfi profili (Part B natijasi)",
-    schematic: "Sxematik tasvir — o'lchangan ma'lumot emas",
+    videoStats: "To'rtta klip, o'lchangan holatda",
+    classMatrix: "Qaysi detektorlar haqiqatan ishga tushadi",
+    classMatrixNote:
+      "Har bir klipdagi segmentlar va ular egallagan vaqt ulushi. Rang — o'lchangan natija, sinf uchun alohida rang emas.",
+    riskProfiles: "Butun material bo'ylab xavf",
+    riskProfilesNote:
+      "Har bir klipning sakkizdan bir qismi bo'yicha o'rtacha Part B xavfi. Kesilgan chiziq — baholovchi hisoblaydigan alarm chegarasi.",
+    sceneMap: "Kalibrlangan sahna",
+    sceneMapNote: "Haqiqiy ko'pburchaklar masshtabda, 3840×2160.",
     decisions: "EDA → dizayn qarorlari",
     finding: "Topilma",
     decision: "Qaror",
-    note: "Sahifadagi barcha raqamlar o'lchangan: video specs — tashkilotchining to'rtta klipiga cv2 proberi, hodisalar va xavf egri chizig'i — to'g'ridan-to'g'ri predictions_samples.json'dan, yo'l yo'nalishlari — scene_config.json'dan. Ikki chizma sxematik deb belgilangan: piksel darajasidagi harakat maydoni bizda yo'q.",
+    provenance: "Bu raqamlar qayerdan keldi",
+    verdictSaturating: "To'yingan",
+    verdictBrief: "Qisqa",
+    verdictSilent: "Jimgina",
+    colVideo: "Klip",
+    colResolution: "O'lcham",
+    colFps: "FPS",
+    colDuration: "Davomiylik",
+    colLight: "Yorug'lik",
+    colEvents: "Hodisalar",
+    colClasses: "Sinflar",
+    colRiskMax: "Xavf max",
+    colRiskMean: "Xavf o'rtacha",
+    colAlarmed: "Kadrlar ≥ 0.5",
+    colPartA: "Part A",
+    colBudget: "Byudjet",
+    schematic: "Sxematik tasvir — o'lchangan ma'lumot emas",
+    note: "Klip parametrlari to'rtta 4K asl faylga ketma-ket cv2 o'tishidan o'lchandi; hodisalar va xavf egri chizig'i to'rtta klip bo'yicha pipeline'ning bitta o'z ishiga tushishidan; yo'l va o'tish joylari geometriyasi — scene_config.json'dan. Sahifadagi oldingi chizmalar qo'lda sxematik edi — ular olib tashlandi, chunki o'lchangan ma'lumot yonida sxematik — dalil emas, bahs.",
   },
   results: {
     kicker: "Natijalar",
@@ -388,8 +425,9 @@ const uz: Dict = {
     riskCurve: "Avariya xavfi egri chizig'i",
     riskNotRun: "B qism (xavf egri chizig'i) hali amalga oshirilmagan.",
     clickToJump: "Videoni o'tkazish uchun hodisaga bosing",
-    videoPending:
-      "Annotatsiyalangan videolar o'z vositalarimiz bilan tayyorlanib, shu yerda e'lon qilinadi.",
+    videoPending: "Bu klip uchun annotatsiyalangan render hali tayyor emas.",
+    renderNote:
+      "To'liq 720p annotatsiyalangan renderlar, qisqa qismalar emas — pastdagi o'z ishiga tushishdan to'g'ridan-to'g'ri, klip uchun bittadan. Fayllar katta, shuning uchun tugma bosilgandan keyin yuklanadi.",
     failureTitle: "Xatolar misollari",
     failureSub: "Tizim xato qilgan halol holatlar.",
     expected: "Kutilgan",
@@ -415,7 +453,7 @@ const uz: Dict = {
     },
     recorded: {
       badge: "QAYD ETILGAN ISHGA TUSHIRISH",
-      body: "Bu jonli so'rov emas: pipelineimiz C3905.MP4 da bergan haqiqiy natija — predictions_samples.json dan to'g'ridan-to'g'ri olingan 14 ta hodisa segmenti va Part B xavf egri chizig'i, xuddi shu shaklda qaytaradigan. Backend ishga tushgach, klipni o'zingiz yuklab ko'ring.",
+      body: "Bu jonli so'rov emas: pipelineimiz C3905.MP4 da bergan haqiqiy natija — sahifadagi har bir raqam ortidagi o'sha o'z ishiga tushishdan to'g'ridan-to'g'ri olingan, xuddi shu shaklda qaytaradigan hodisa segmentlari va Part B xavf egri chizig'i. Backend ishga tushgach, klipni o'zingiz yuklab ko'ring.",
     },
     errors: {
       noFile: "Avval video tanlang.",
@@ -447,15 +485,15 @@ const uz: Dict = {
       next: "Keyingi qadamlar",
     },
     built:
-      "Joriy topshiriq YOLO11x + ByteTrack pipeline'i va legacy rule engine'ini ishlatadi. Standart yo'lda beshta sinf faol; alohida PHASE detektorlari flag orqali mavjud, B qism esa sababsiz nol ball qaytaradi.",
+      "Bitta pipeline, o'nto'rtta sinfning hammasi ro'yxatda. Yagona provayder jadvali (5 ta legacy qoida dvigateli, 6 ta kalibrlangan geometriya detektori, 3 ta ataylab ajratilgan) sinfni ikki marta hisoblashni qurilma darajasida imkonsiz qiladi. B qism — haqiqiy sababsiz risk estimator: uchta kanal (TTC, keskin tormozlash, piyoda yaqinlashuv), max bo'yicha yig'iladi va bitta asimmetrik EMA bilan shakllanadi.",
     arch:
-      "Kadrlar dekodlanadi, aniqlangan ob'ektlar kuzatiladi, sahna qoidalari va vaqt bo'yicha tozalash hodisa segmentlarini yaratadi. Alohida modullar mavjud, ammo hammasi production event pool'iga ulanmagan.",
+      "Kadrlar dekodlanadi, YOLO11x aniqlaydi, ByteTrack bog'laydi, keyin har bir label uchun provayder traektoriyalarni segmentlarga aylantiradi. Geometriya barcha kliplar uchun umumiy bo'lgan kalibrlangan scene_config.json'dan. Topshiriq byudjet bilan himoyalangan: Part A + Part B uchun 3× davomiylik, oshganda ham hodisalar, ham risk butunlay bo'sh qoladi.",
     worked:
-      "Statsionar kamera pipeline'i, tracker reset yo'li, hodisa postprocessing'i va website wiring oxirgacha ishlaydi. Joriy ishlab chiqarish yuguruvi legacy hodisa sinflarining to'rtta diagnostik segmentini berdi.",
+      "To'rtta klip bo'yicha to'liq yuguruv: 4K ko'rish materialida 18 daqiqa ichida 107 segment, Part A har bir klipda byudjetning 23–25% ida va xatosiz, xavf 0.64–0.89 gacha ko'tariladi, kadrlarning 12.6% i alarm chegarasidan yuqori, 731 ta test o'tadi. Segmentlarni birlashtirish, blip chegarasi va bir sinfda qo'payishni olib tashlash o'z ishini ko'rsatadi — congestion to'rtta klipda 87 s chiqadi, ularni to'liq qoplamasdan.",
     failed:
-      "Accident, red-light, solid-line va stop-line production wiring hali to'liq emas. Sahna geometriyasi ishonchli emas, chiroq holati aniqlanmagan, risk estimator esa hozirda 0.0 qaytaradi.",
+      "To'rtta sinf to'yingan: near_miss (butun materialning 83%), wrong_way va jaywalking (har bir klipda 100%), failure_to_yield (86%). Belgilar bo'lmagan holda noto'g'ri aniqlashni zaif chegaradan ajratib bo'lmaydi, va metrika ikkalasini ham jazolaydi — ground truth'da yo'q sinf bashorat qilinganda F1=0 oladi va makro o'rtachaga qo'shiladi. Yana C3902'dagi buzilgan blok — production VideoReader uni kesib tashlab, 179 s yo'qotadi.",
     next:
-      "Mustaqil detektorlarni ulash, umumiy sahna geometriyasini kalibrlash, signal holati klassifikatorini qo'shish, belgilangan kliplar bo'yicha hodisa chegaralarini tekshirish va sababsiz risk modelini o'qitish.",
+      "wrong_way'ni yo'l bo'yicha expected_direction detektoriga o'tkazish, uchta co-presence chegarasiga yetishmaydigan shartni qo'shish, VideoReader'ni seek bilan tiklash, signal holati klassifikatorini qurish — shunda red_light va stop_line jim bo'lishdan to'xtaydi — va, haqiqiy yechim, bularni sozlash uchun belgilangan kliplar olish.",
   },
   team: {
     kicker: "Jamoa",
