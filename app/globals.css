@@ -1,11 +1,31 @@
 @import "tailwindcss";
 
+/*
+ * Palette.
+ *
+ * The subject is a fixed camera watching one junction at night - the C3905
+ * sample has a mean luma of 48 - and the deliverable is a set of MEASUREMENTS
+ * about time. So: a near-black base that borrows nothing from daylight, one
+ * signal colour reserved exclusively for risk, and colour used for nothing else.
+ *
+ * The previous palette was a cyan/amber neon duo on a navy ground, which reads
+ * as "AI dashboard" and, worse, spent its two loud colours on decoration. Here
+ * amber means exactly one thing: this measurement is a problem. A class that
+ * covered most of the clip is red. A class that never fired is grey. There is
+ * no fourth meaning.
+ */
 :root {
-  --background: #07111f;
-  --foreground: #f3f7fc;
-  --surface: #0b1728;
-  --surface-2: #101e32;
-  --line: rgba(157, 183, 211, 0.16);
+  --background: #0a0b0e;
+  --foreground: #edf1f5;
+  --surface: #111318;
+  --surface-2: #171a21;
+  --line: rgba(170, 185, 205, 0.13);
+  --ink-dim: #99a3b0;
+  --ink-faint: #6a737f;
+  --signal: #ff9a2e; /* risk, alarm, false positive */
+  --alarm: #ff4d4d; /* saturating detector */
+  --ok: #5bd98a; /* measured sane */
+  --ice: #a9c7e8; /* measured, neutral */
 }
 
 @theme inline {
@@ -14,6 +34,12 @@
   --color-surface: var(--surface);
   --color-surface2: var(--surface-2);
   --color-line: var(--line);
+  --color-inkdim: var(--ink-dim);
+  --color-inkfaint: var(--ink-faint);
+  --color-signal: var(--signal);
+  --color-alarm: var(--alarm);
+  --color-ok: var(--ok);
+  --color-ice: var(--ice);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -31,10 +57,10 @@ body {
   position: relative;
   isolation: isolate;
   min-width: 320px;
-  background:
-    radial-gradient(circle at 82% 4%, rgba(78, 205, 224, 0.12), transparent 32rem),
-    radial-gradient(circle at 10% 38%, rgba(255, 181, 88, 0.055), transparent 28rem),
-    var(--background);
+  /* No decorative gradient washes. A page about measurement does not need a
+     glow behind it; the one gradient left is the grid, and it is nearly
+     invisible. */
+  background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -46,12 +72,12 @@ body::before {
   inset: 0;
   pointer-events: none;
   content: "";
-  opacity: 0.18;
+  opacity: 0.5;
   background-image:
-    linear-gradient(to right, rgba(152, 188, 214, 0.08) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(152, 188, 214, 0.08) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: linear-gradient(to bottom, black, transparent 88%);
+    linear-gradient(to right, rgba(152, 188, 214, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(152, 188, 214, 0.05) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: linear-gradient(to bottom, black, transparent 70%);
 }
 
 body > * {
@@ -73,27 +99,34 @@ button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 video:focus-visible {
-  box-shadow: 0 0 0 3px rgba(103, 232, 249, 0.7);
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ice);
+}
+
+/*
+ * Cards.
+ *
+ * Was: a 135° gradient, a 2xl radius and an 80px drop shadow, applied to ~25
+ * boxes. That is the SaaS-card kit - one treatment for everything, so nothing
+ * has emphasis. Now: a flat panel, a hairline, a 6px radius, and no shadow.
+ * Emphasis comes from type size and from the signal colour, not from a glow.
+ */
+.glass {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+/* A panel that carries a verdict, not just data. */
+.glass-flag {
+  border-color: color-mix(in oklab, var(--signal) 38%, transparent);
+  background: color-mix(in oklab, var(--signal) 5%, var(--surface));
 }
 
 .bg-grid {
   background-image:
-    linear-gradient(to right, rgba(152, 188, 214, 0.09) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(152, 188, 214, 0.09) 1px, transparent 1px);
-  background-size: 48px 48px;
-}
-
-.bg-grid-fine {
-  background-image:
-    linear-gradient(to right, rgba(152, 188, 214, 0.07) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(152, 188, 214, 0.07) 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-
-.glass {
-  border: 1px solid var(--line);
-  background: linear-gradient(135deg, rgba(18, 37, 60, 0.86), rgba(8, 19, 34, 0.82));
-  box-shadow: 0 24px 80px rgba(1, 8, 20, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    linear-gradient(to right, rgba(152, 188, 214, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(152, 188, 214, 0.06) 1px, transparent 1px);
+  background-size: 64px 64px;
 }
 
 .text-balance {
@@ -101,83 +134,20 @@ video:focus-visible {
 }
 
 .hero-section {
-  min-height: min(860px, calc(100vh - 1px));
+  min-height: min(820px, calc(100vh - 1px));
 }
 
+/*
+ * The hero title. The accent span covers the second half of the headline only,
+ * which is the one place a two-tone headline is allowed - and the gradient runs
+ * ice to signal so it lands on the same amber that means "risk" everywhere else
+ * on the page.
+ */
 .hero-title-accent {
-  background: linear-gradient(100deg, #f7fbff 12%, #69e6f5 48%, #ffc46b 92%);
+  background: linear-gradient(100deg, #edf1f5 8%, var(--ice) 46%, var(--signal) 96%);
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
-}
-
-.event-section {
-  background:
-    linear-gradient(180deg, rgba(15, 36, 58, 0.22), transparent 20rem),
-    var(--background);
-}
-
-.scanline {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 22%;
-  background: linear-gradient(to bottom, transparent, rgba(103, 232, 249, 0.12), transparent);
-  animation: scan 4.5s linear infinite;
-  pointer-events: none;
-}
-
-.radar-sweep {
-  transform-origin: 50% 50%;
-  animation: radar-sweep 5.5s linear infinite;
-}
-
-.radar-pulse {
-  animation: radar-pulse 2.8s ease-out infinite;
-}
-
-@keyframes scan {
-  0% { top: -10%; }
-  100% { top: 110%; }
-}
-
-@keyframes radar-sweep {
-  0% { transform: rotate(0deg); opacity: 0; }
-  12% { opacity: 1; }
-  100% { transform: rotate(360deg); opacity: 0; }
-}
-
-@keyframes radar-pulse {
-  0%, 100% { opacity: 0.35; transform: scale(0.92); }
-  50% { opacity: 0.9; transform: scale(1.04); }
-}
-
-@keyframes float {
-  0%, 100% { transform: translate(-50%, 0); }
-  50% { transform: translate(-50%, -6px); }
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
-}
-
-@keyframes pulse-ring {
-  0% { transform: scale(0.85); opacity: 0.7; }
-  100% { transform: scale(1.45); opacity: 0; }
-}
-
-.blink {
-  animation: blink 1.4s ease-in-out infinite;
-}
-
-.pulse-ring::after {
-  position: absolute;
-  inset: 0;
-  border: 2px solid currentColor;
-  border-radius: 9999px;
-  content: "";
-  animation: pulse-ring 1.6s ease-out infinite;
 }
 
 .nice-scroll::-webkit-scrollbar {
@@ -195,7 +165,7 @@ video:focus-visible {
 }
 
 ::selection {
-  background: rgba(103, 232, 249, 0.28);
+  background: rgba(255, 154, 46, 0.28);
   color: #ffffff;
 }
 

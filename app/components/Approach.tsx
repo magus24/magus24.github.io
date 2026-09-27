@@ -88,6 +88,7 @@ export default function Approach() {
   return (
     <Section
       id="approach"
+      index="02"
       kicker={t("approach.kicker")}
       title={t("approach.title")}
       subtitle={t("approach.subtitle")}

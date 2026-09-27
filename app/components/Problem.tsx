@@ -16,6 +16,7 @@ export default function Problem() {
   return (
     <Section
       id="problem"
+      index="01"
       kicker={t("problem.kicker")}
       title={t("problem.title")}
       className="border-t border-line"

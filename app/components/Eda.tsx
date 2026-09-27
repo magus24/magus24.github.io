@@ -81,6 +81,7 @@ export default function Eda() {
   return (
     <Section
       id="eda"
+      index="03"
       kicker={t("eda.kicker")}
       title={t("eda.title")}
       subtitle={t("eda.subtitle")}

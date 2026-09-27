@@ -2,12 +2,24 @@
 
 import type { ReactNode } from "react";
 import type { EventLabel, EventSeg, RiskPoint } from "@/lib/types";
-import { formatDuration } from "@/lib/data";
+import { EVENT_REPORTS, RUN_FACTS, formatDuration } from "@/lib/data";
 
 /* ─── Reusable layout primitives ─────────────────────────────────────────── */
 
+/**
+ * A section opener with a left rail.
+ *
+ * The previous version gave all nine sections the same treatment - a cyan
+ * all-caps mono eyebrow, a 48px title, a max-w-2xl subtitle - so nothing about
+ * the page's structure was encoded and the eye had no rhythm to follow. The rail
+ * now carries the section's position in the argument, which is real information
+ * (these ARE a sequence: problem, method, evidence, verdict, people), and the
+ * kicker drops the tracked-out uppercase so it reads as a label rather than as
+ * a stamp.
+ */
 export function Section({
   id,
+  index,
   kicker,
   title,
   subtitle,
@@ -15,6 +27,7 @@ export function Section({
   className = "",
 }: {
   id: string;
+  index?: string;
   kicker?: string;
   title: string;
   subtitle?: string;
@@ -22,22 +35,34 @@ export function Section({
   className?: string;
 }) {
   return (
-    <section id={id} className={`scroll-mt-20 py-20 sm:py-28 ${className}`}>
+    <section
+      id={id}
+      className={`scroll-mt-20 border-t border-line py-16 sm:py-24 ${className}`}
+    >
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
-        {kicker && (
-          <p className="mb-4 font-mono text-xs font-medium uppercase tracking-[0.24em] text-cyan-300">
-            {kicker}
-          </p>
-        )}
-        <h2 className="max-w-4xl text-3xl font-semibold tracking-tight text-zinc-50 sm:text-5xl">
-          {title}
-        </h2>
-        {subtitle && (
-          <p className="mt-5 max-w-2xl text-sm leading-7 text-zinc-400 sm:text-base">
-            {subtitle}
-          </p>
-        )}
-        <div className="mt-12">{children}</div>
+        <div className="lg:grid lg:grid-cols-[7.5rem_minmax(0,1fr)] lg:gap-12">
+          <div className="mb-6 lg:mb-0">
+            {index ? (
+              <p className="font-mono text-sm leading-none text-inkfaint">{index}</p>
+            ) : null}
+            {kicker ? (
+              <p className="mt-3 max-w-[13rem] text-xs leading-5 text-inkdim lg:border-t lg:border-line lg:pt-3">
+                {kicker}
+              </p>
+            ) : null}
+          </div>
+          <div className="min-w-0">
+            <h2 className="max-w-3xl text-balance text-2xl font-semibold leading-[1.12] tracking-[-0.021em] text-foreground sm:text-4xl">
+              {title}
+            </h2>
+            {subtitle ? (
+              <p className="mt-4 max-w-[68ch] text-sm leading-7 text-inkdim sm:text-[0.975rem]">
+                {subtitle}
+              </p>
+            ) : null}
+            <div className="mt-10">{children}</div>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -46,14 +71,15 @@ export function Section({
 export function Card({
   children,
   className = "",
+  flag = false,
 }: {
   children: ReactNode;
   className?: string;
+  /** Panel carries a verdict, not just data. */
+  flag?: boolean;
 }) {
   return (
-    <div
-      className={`glass rounded-2xl p-5 sm:p-6 ${className}`}
-    >
+    <div className={`${flag ? "glass-flag" : "glass"} p-5 sm:p-6 ${className}`}>
       {children}
     </div>
   );
@@ -67,50 +93,65 @@ export function Pill({
   tone?: "green" | "amber" | "red" | "slate" | "cyan";
 }) {
   const tones: Record<string, string> = {
-    green: "border-emerald-300/30 bg-emerald-300/10 text-emerald-200",
-    amber: "border-amber-300/30 bg-amber-300/10 text-amber-200",
-    red: "border-rose-300/30 bg-rose-300/10 text-rose-200",
-    slate: "border-slate-400/30 bg-slate-400/10 text-slate-200",
-    cyan: "border-cyan-300/30 bg-cyan-300/10 text-cyan-200",
+    green: "border-ok/30 bg-ok/10 text-emerald-200",
+    amber: "border-signal/35 bg-signal/10 text-amber-200",
+    red: "border-alarm/35 bg-alarm/10 text-red-200",
+    slate: "border-line bg-white/[0.04] text-inkdim",
+    cyan: "border-ice/25 bg-ice/10 text-ice",
   };
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[11px] font-medium ${tones[tone]}`}
+      className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] leading-5 text-inkdim ${tones[tone]}`}
     >
       {children}
     </span>
   );
 }
 
-/* ─── Event colours ───────────────────────────────────────────────────────── */
+/* ─── Event colour = the measured verdict, not a hue per class ────────────── */
 
-export const EVENT_COLORS: Record<EventLabel, { bar: string; chip: string }> = {
-  accident: { bar: "#ef4444", chip: "border-red-400/40 bg-red-400/10 text-red-300" },
-  near_miss: { bar: "#f97316", chip: "border-orange-400/40 bg-orange-400/10 text-orange-300" },
-  red_light: { bar: "#f43f5e", chip: "border-rose-400/40 bg-rose-400/10 text-rose-300" },
-  wrong_way: { bar: "#f59e0b", chip: "border-amber-400/40 bg-amber-400/10 text-amber-300" },
-  illegal_u_turn: { bar: "#e879f9", chip: "border-fuchsia-400/40 bg-fuchsia-400/10 text-fuchsia-300" },
-  stopped_vehicle: { bar: "#94a3b8", chip: "border-slate-400/40 bg-slate-400/10 text-slate-300" },
-  jaywalking: { bar: "#a78bfa", chip: "border-violet-400/40 bg-violet-400/10 text-violet-300" },
-  failure_to_yield: { bar: "#fb7185", chip: "border-pink-400/40 bg-pink-400/10 text-pink-300" },
-  illegal_turn: { bar: "#c084fc", chip: "border-purple-400/40 bg-purple-400/10 text-purple-300" },
-  solid_line_crossing: { bar: "#22d3ee", chip: "border-cyan-400/40 bg-cyan-400/10 text-cyan-300" },
-  stop_line: { bar: "#2dd4bf", chip: "border-teal-400/40 bg-teal-400/10 text-teal-300" },
-  congestion: { bar: "#60a5fa", chip: "border-blue-400/40 bg-blue-400/10 text-blue-300" },
-  road_obstacle: { bar: "#a3e635", chip: "border-lime-400/40 bg-lime-400/10 text-lime-300" },
-  fire_smoke: { bar: "#ef4444", chip: "border-red-400/40 bg-red-400/10 text-red-300" },
+/**
+ * Previously all fourteen classes got their own pastel at a similar saturation,
+ * which asserted that fourteen detectors are equally alive. The measured run
+ * says the opposite: four of them fire for almost the entire clip, and two are
+ * structurally inert. So colour is derived from what the class actually DID on
+ * C3905, and it updates itself whenever the predictions are regenerated.
+ */
+export type Verdict = "saturating" | "brief" | "silent";
+
+const RUN_DURATION = RUN_FACTS.durationSec;
+const PER_CLASS = RUN_FACTS.perClass as Record<
+  string,
+  { segments: number; seconds: number }
+>;
+
+export function verdictOf(label: string): Verdict {
+  const measured = PER_CLASS[label];
+  if (!measured || measured.segments === 0) return "silent";
+  return measured.seconds / RUN_DURATION >= 0.25 ? "saturating" : "brief";
+}
+
+export const VERDICT_COLORS: Record<Verdict, { bar: string; chip: string }> = {
+  saturating: { bar: "#ff4d4d", chip: "border-alarm/45 bg-alarm/10 text-red-200" },
+  brief: { bar: "#5bd98a", chip: "border-ok/40 bg-ok/10 text-emerald-200" },
+  silent: { bar: "#5b636e", chip: "border-line bg-white/[0.03] text-inkfaint" },
 };
 
+export const EVENT_COLORS: Record<EventLabel, { bar: string; chip: string }> =
+  Object.fromEntries(
+    EVENT_REPORTS.map((report) => [report.label, VERDICT_COLORS[verdictOf(report.label)]]),
+  ) as Record<EventLabel, { bar: string; chip: string }>;
+
 export function EventChip({ label, onClick }: { label: string; onClick?: () => void }) {
-  const colors = EVENT_COLORS[label as EventLabel] ?? EVENT_COLORS.accident;
+  const colors = EVENT_COLORS[label as EventLabel] ?? VERDICT_COLORS.silent;
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-xs transition-transform hover:-translate-y-0.5 ${colors.chip}`}
+      className={`inline-flex items-center gap-1.5 rounded border px-2.5 py-1 text-xs ${colors.chip}`}
     >
       <span
-        className="h-2 w-2 rounded-full"
+        className="h-1.5 w-1.5 shrink-0 rounded-[1px]"
         style={{ backgroundColor: colors.bar }}
       />
       {label.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}

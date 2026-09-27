@@ -11,6 +11,7 @@ export default function Report() {
   return (
     <Section
       id="report"
+      index="07"
       kicker={t("report.kicker")}
       title={t("report.title")}
       className="border-t border-line"

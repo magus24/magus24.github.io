@@ -1,99 +1,184 @@
 "use client";
 
-import { EVENT_REPORTS } from "@/lib/data";
-import type { EventReadiness } from "@/lib/types";
+import { RUN_FACTS, SAMPLE_VIDEOS } from "@/lib/data";
+import { VERDICT_COLORS, verdictOf } from "./charts";
 import { useLanguage } from "./LanguageContext";
 
-const RADAR_COLORS: Record<EventReadiness, string> = {
-  active: "#5ee6a8",
-  flagged: "#ffc46b",
-  prototype: "#b8a5ff",
-  planned: "#ff746d",
-};
+const RECORDED = SAMPLE_VIDEOS.find((v) => v.id === "c3905");
 
-function EventRadar() {
+/**
+ * The hero graphic: the actual measured run.
+ *
+ * This used to be a radar chart - fourteen numbered dots on concentric rings,
+ * a rotating sweep, one number in the middle. All that ink encoded "5 active, 3
+ * flagged", which a sentence states better, and a radar has no way to show the
+ * only thing this project actually has: WHEN things happen.
+ *
+ * So the hero is now the evidence. The Part B risk curve sits above the 14 event
+ * segments on one shared time axis, the four saturating detectors are ordered to
+ * the top because that is the finding, and the two numbers under it are the
+ * measured runtime and the budget it has to fit in. It is also the honest
+ * headline: we are asking to be judged on measurements, so the first thing on
+ * the page is a measurement.
+ */
+function MeasuredRun() {
   const { t } = useLanguage();
-  const active = EVENT_REPORTS.filter((report) => report.readiness === "active").length;
-  const flagged = EVENT_REPORTS.filter((report) => report.readiness === "flagged").length;
+  const run = RECORDED;
+  if (!run) return null;
+
+  const W = 760;
+  const H = 360;
+  const GUT = 122; // class-label gutter
+  const X0 = GUT;
+  const X1 = W - 12;
+  const SPAN = X1 - X0;
+  const RISK_TOP = 16;
+  const RISK_BOT = 132;
+  const RISK_MAX = 0.7;
+  const LANE_TOP = 162;
+  const LANE_H = 18;
+  const AXIS_Y = 300;
+
+  const x = (t: number) => X0 + (t / run.duration) * SPAN;
+  const y = (s: number) => RISK_BOT - (Math.min(s, RISK_MAX) / RISK_MAX) * (RISK_BOT - RISK_TOP);
+
+  // Classes ordered by how much of the clip they covered: the finding is at the
+  // top, not buried in lane nine.
+  const lanes = Object.entries(
+    run.events.reduce<Record<string, { start: number; end: number }[]>>((acc, seg) => {
+      (acc[seg.label] ??= []).push(seg);
+      return acc;
+    }, {}),
+  )
+    .map(([label, segs]) => ({
+      label,
+      segs,
+      seconds: segs.reduce((sum, s) => sum + (s.end - s.start), 0),
+    }))
+    .sort((a, b) => b.seconds - a.seconds);
+
+  const area =
+    `${run.risk.map(([t, s], i) => `${i === 0 ? "M" : "L"}${x(t).toFixed(1)} ${y(s).toFixed(1)}`).join(" ")} ` +
+    `L${x(run.duration).toFixed(1)} ${RISK_BOT} L${X0} ${RISK_BOT} Z`;
+  const line = run.risk
+    .map(([t, s], i) => `${i === 0 ? "M" : "L"}${x(t).toFixed(1)} ${y(s).toFixed(1)}`)
+    .join(" ");
 
   return (
-    <div className="glass relative overflow-hidden rounded-3xl p-5 sm:p-7">
-      <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-cyan-300/10 blur-3xl" />
-      <div className="relative flex items-center justify-between gap-4 border-b border-line pb-5">
-        <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-cyan-300">{t("hero.radarLabel")}</p>
-          <p className="mt-2 text-sm text-zinc-300">CAM-01 · STATIC SCENE</p>
-        </div>
-        <span className="flex items-center gap-2 rounded-full border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-emerald-200">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
-          SYSTEM MAP
-        </span>
+    <div className="glass p-4 sm:p-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-line pb-3">
+        <p className="text-sm font-medium text-foreground">{run.title}</p>
+        <p className="font-mono text-xs text-inkfaint">
+          {RUN_FACTS.events} segments · {run.duration.toFixed(2)} s · {run.resolution}
+        </p>
       </div>
 
-      <div className="relative mx-auto mt-5 aspect-square w-full max-w-[420px]">
-        <svg viewBox="0 0 420 420" className="h-full w-full" role="img" aria-label="Fourteen traffic event readiness channels">
-          <defs>
-            <radialGradient id="radarGlow">
-              <stop offset="0%" stopColor="#67e8f9" stopOpacity="0.16" />
-              <stop offset="100%" stopColor="#67e8f9" stopOpacity="0" />
-            </radialGradient>
-            <linearGradient id="radarBeam" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#67e8f9" stopOpacity="0.28" />
-              <stop offset="100%" stopColor="#67e8f9" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <circle cx="210" cy="210" r="190" fill="url(#radarGlow)" />
-          {[70, 112, 154, 190].map((radius) => (
-            <circle key={radius} cx="210" cy="210" r={radius} fill="none" stroke="rgba(152,188,214,.18)" strokeWidth="1" />
-          ))}
-          <path d="M210 20V400M20 210H400" stroke="rgba(152,188,214,.12)" strokeWidth="1" />
-          <path d="M78 78 342 342M342 78 78 342" stroke="rgba(152,188,214,.08)" strokeWidth="1" />
-          <g className="radar-sweep">
-            <path d="M210 210 210 20A190 190 0 0 1 335 77Z" fill="url(#radarBeam)" />
-            <line x1="210" y1="210" x2="210" y2="20" stroke="#67e8f9" strokeOpacity="0.42" strokeWidth="1.5" />
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="mt-4 w-full"
+        role="img"
+        aria-label={`Part B risk curve and ${RUN_FACTS.events} event segments measured on ${run.title}`}
+      >
+        {/* risk scale */}
+        {[0, 0.35, 0.7].map((s) => (
+          <g key={s}>
+            <line
+              x1={X0}
+              x2={X1}
+              y1={y(s)}
+              y2={y(s)}
+              stroke="rgba(170,185,205,0.10)"
+              strokeWidth="1"
+            />
+            <text x={X0 - 8} y={y(s) + 3} textAnchor="end" fontSize="10" fill="#6a737f" fontFamily="monospace">
+              {s.toFixed(2)}
+            </text>
           </g>
-          {EVENT_REPORTS.map((report, index) => {
-            const angle = (index / EVENT_REPORTS.length) * Math.PI * 2 - Math.PI / 2;
-            const radius = report.readiness === "active" ? 160 : report.readiness === "flagged" ? 176 : 190;
-            const x = Number((210 + Math.cos(angle) * radius).toFixed(2));
-            const y = Number((210 + Math.sin(angle) * radius).toFixed(2));
-            const color = RADAR_COLORS[report.readiness];
-            return (
-              <g key={report.label}>
-                <circle cx={x} cy={y} r={report.readiness === "active" ? 7 : 5} fill={color} fillOpacity={report.readiness === "active" ? 0.95 : 0.8} className={report.readiness === "active" ? "radar-pulse" : ""} />
-                <text x={x} y={y + 3} textAnchor="middle" fontSize="8" fontFamily="monospace" fill="#07111f">{index + 1}</text>
-              </g>
-            );
-          })}
-        </svg>
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="text-center">
-            <p className="font-mono text-6xl font-semibold tracking-[-0.08em] text-zinc-50">14</p>
-            <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.2em] text-cyan-200">{t("hero.channels")}</p>
-          </div>
-        </div>
-      </div>
+        ))}
+        <text x={X0 - 8} y={RISK_TOP - 5} textAnchor="end" fontSize="10" fill="#99a3b0">
+          risk
+        </text>
 
-      <div className="relative mt-5 grid grid-cols-2 gap-2 border-t border-line pt-5 sm:grid-cols-4">
-        <div className="rounded-xl bg-emerald-300/8 p-3">
-          <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-emerald-200">{t("hero.defaultPath")}</p>
-          <p className="mt-1 text-xl font-semibold text-zinc-100">{active}</p>
-        </div>
-        <div className="rounded-xl bg-amber-300/8 p-3">
-          <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-amber-200">{t("hero.behindFlag")}</p>
-          <p className="mt-1 text-xl font-semibold text-zinc-100">{flagged}</p>
-        </div>
-        <div className="col-span-2 rounded-xl bg-white/[0.04] p-3 sm:col-span-2">
-          <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-zinc-500">{t("hero.radarCaption")}</p>
-          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-2">
-            {Object.entries(RADAR_COLORS).map(([status, color]) => (
-              <span key={status} className="flex items-center gap-1.5 text-[10px] text-zinc-400">
-                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
-                {t(`events.${status}`)}
-              </span>
-            ))}
+        <path d={area} fill="rgba(169,199,232,0.10)" />
+        <path d={line} fill="none" stroke="#a9c7e8" strokeWidth="1.5" />
+
+        {/* alarm threshold, the one line the metric actually cares about */}
+        <line
+          x1={X0}
+          x2={X1}
+          y1={y(0.5)}
+          y2={y(0.5)}
+          stroke="#ff9a2e"
+          strokeWidth="1"
+          strokeDasharray="3 3"
+          strokeOpacity="0.8"
+        />
+        <text x={X1} y={y(0.5) - 5} textAnchor="end" fontSize="10" fill="#ff9a2e" fontFamily="monospace">
+          θ 0.5
+        </text>
+
+        {/* one lane per class, ordered by total coverage */}
+        {lanes.map((lane, i) => {
+          const top = LANE_TOP + i * LANE_H;
+          const color = VERDICT_COLORS[verdictOf(lane.label)];
+          return (
+            <g key={lane.label}>
+              <text
+                x={X0 - 8}
+                y={top + 11}
+                textAnchor="end"
+                fontSize="10"
+                fill={color.bar}
+                fontFamily="monospace"
+              >
+                {lane.label.replace(/_/g, " ")}
+              </text>
+              {lane.segs.map((seg, j) => {
+                const w = Math.max(1.5, x(seg.end) - x(seg.start));
+                return (
+                  <rect
+                    key={j}
+                    x={x(seg.start)}
+                    y={top + 3}
+                    width={w}
+                    height={12}
+                    fill={color.bar}
+                    fillOpacity={lane.seconds / run.duration >= 0.25 ? 0.55 : 0.85}
+                    rx="1"
+                  />
+                );
+              })}
+            </g>
+          );
+        })}
+
+        {/* time axis */}
+        <line x1={X0} x2={X1} y1={AXIS_Y} y2={AXIS_Y} stroke="rgba(170,185,205,0.22)" />
+        {[0, 30, 60, 90, 120].map((t) => (
+          <g key={t}>
+            <line x1={x(t)} x2={x(t)} y1={AXIS_Y} y2={AXIS_Y + 4} stroke="rgba(170,185,205,0.22)" />
+            <text x={x(t)} y={AXIS_Y + 16} textAnchor="middle" fontSize="10" fill="#6a737f" fontFamily="monospace">
+              {t}s
+            </text>
+          </g>
+        ))}
+        <text x={X1} y={AXIS_Y + 30} textAnchor="end" fontSize="10" fill="#6a737f">
+          {t("hero.axisNote")}
+        </text>
+      </svg>
+
+      <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded border border-line bg-line sm:grid-cols-4">
+        {[
+          { k: "2.28×", v: t("hero.wallTime"), tone: "text-foreground" },
+          { k: "3×", v: t("hero.budget"), tone: "text-foreground" },
+          { k: String(RUN_FACTS.framesAlarmed), v: t("hero.alarmed"), tone: "text-signal" },
+          { k: "4", v: t("hero.saturating"), tone: "text-alarm" },
+        ].map((cell) => (
+          <div key={cell.v} className="bg-surface px-3 py-2.5">
+            <p className={`font-mono text-lg leading-none ${cell.tone}`}>{cell.k}</p>
+            <p className="mt-1.5 text-[11px] leading-4 text-inkfaint">{cell.v}</p>
           </div>
-        </div>
+        ))}
       </div>
     </div>
   );
@@ -104,55 +189,39 @@ export default function Hero() {
 
   return (
     <section id="top" className="hero-section relative overflow-hidden">
-      <div className="bg-grid pointer-events-none absolute inset-0 opacity-50" />
-      <div className="pointer-events-none absolute left-1/2 top-[-22rem] h-[42rem] w-[42rem] -translate-x-1/2 rounded-full bg-cyan-300/10 blur-3xl" />
-      <div className="relative mx-auto grid w-full max-w-7xl gap-14 px-4 pb-20 pt-32 sm:px-6 sm:pt-40 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-20">
+      <div className="bg-grid pointer-events-none absolute inset-0" />
+      <div className="relative mx-auto grid w-full max-w-7xl gap-12 px-4 pb-20 pt-28 sm:px-6 sm:pt-32 lg:grid-cols-[0.85fr_1.15fr] lg:items-center lg:gap-16">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/8 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-cyan-200">
-            <span className="h-1.5 w-1.5 rounded-full bg-cyan-300" />
+          <div className="inline-flex items-center gap-2 rounded border border-line px-2.5 py-1 text-xs text-inkdim">
+            <span className="h-1.5 w-1.5 rounded-[1px] bg-signal" />
             {t("hero.badge")}
           </div>
-          <h1 className="mt-7 max-w-3xl text-balance text-5xl font-semibold leading-[0.98] tracking-[-0.045em] text-zinc-50 sm:text-7xl">
+          <h1 className="mt-6 max-w-2xl text-balance text-[2.6rem] font-semibold leading-[1.02] tracking-[-0.04em] text-foreground sm:text-6xl">
             {t("hero.title1")} <span className="hero-title-accent">{t("hero.title2")}</span>
           </h1>
-          <p className="mt-7 max-w-xl text-base leading-8 text-zinc-400 sm:text-lg">{t("hero.subtitle")}</p>
+          <p className="mt-6 max-w-[58ch] text-base leading-7 text-inkdim">{t("hero.subtitle")}</p>
 
-          <div className="mt-9 grid max-w-xl grid-cols-3 gap-2 sm:gap-3">
-            <div className="border-l border-cyan-300/40 pl-3">
-              <p className="font-mono text-2xl font-semibold text-zinc-100">14</p>
-              <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-zinc-500">{t("hero.channels")}</p>
-            </div>
-            <div className="border-l border-emerald-300/40 pl-3">
-              <p className="font-mono text-2xl font-semibold text-zinc-100">05</p>
-              <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-zinc-500">{t("hero.defaultPath")}</p>
-            </div>
-            <div className="border-l border-amber-300/40 pl-3">
-              <p className="font-mono text-2xl font-semibold text-zinc-100">03</p>
-              <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-zinc-500">{t("hero.behindFlag")}</p>
-            </div>
-          </div>
-
-          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-            <a href="#events" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-cyan-300 px-6 text-sm font-semibold text-slate-950 transition-all hover:-translate-y-0.5 hover:bg-cyan-200">
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <a
+              href="#results"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded bg-signal px-5 text-sm font-semibold text-[#14100a] transition-colors hover:bg-amber-300"
+            >
               {t("hero.ctaEvents")}
-              <span aria-hidden="true">↘</span>
             </a>
-            <a href="#demo" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-line bg-surface/70 px-6 text-sm font-semibold text-zinc-200 transition-all hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-surface">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-300" />
+            <a
+              href="#demo"
+              className="inline-flex h-11 items-center justify-center rounded border border-line px-5 text-sm font-semibold text-inkdim transition-colors hover:border-inkfaint hover:text-foreground"
+            >
               {t("hero.ctaDemo")}
             </a>
           </div>
 
-          <div className="mt-10 flex items-center gap-3 border-t border-line pt-5 font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-600">
-            <span>YOLO11x</span>
-            <span className="h-1 w-1 rounded-full bg-zinc-700" />
-            <span>ByteTrack</span>
-            <span className="h-1 w-1 rounded-full bg-zinc-700" />
-            <span>causal risk hook</span>
-          </div>
+          <p className="mt-10 border-t border-line pt-4 text-xs leading-6 text-inkfaint">
+            YOLO11x · ByteTrack · 14 classes through one provider registry
+          </p>
         </div>
 
-        <EventRadar />
+        <MeasuredRun />
       </div>
     </section>
   );

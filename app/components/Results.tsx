@@ -163,6 +163,7 @@ export default function Results() {
   return (
     <Section
       id="results"
+      index="05"
       kicker={t("results.kicker")}
       title={t("results.title")}
       subtitle={t("results.subtitle")}

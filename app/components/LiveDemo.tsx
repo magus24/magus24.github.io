@@ -200,6 +200,7 @@ export default function LiveDemo() {
   return (
     <Section
       id="demo"
+      index="06"
       kicker={t("demo.kicker")}
       title={t("demo.title")}
       subtitle={t("demo.subtitle")}

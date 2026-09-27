@@ -63,6 +63,7 @@ export default function Team() {
   return (
     <Section
       id="team"
+      index="08"
       kicker={t("team.kicker")}
       title={t("team.title")}
       subtitle={t("team.subtitle")}

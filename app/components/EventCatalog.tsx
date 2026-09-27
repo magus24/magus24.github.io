@@ -184,17 +184,18 @@ export default function EventCatalog() {
   const selectedIndex = EVENT_REPORTS.findIndex((report) => report.label === selectedReport.label);
 
   return (
-    <section id="events" className="event-section relative scroll-mt-20 overflow-hidden border-t border-line py-20 sm:py-28">
-      <div className="bg-grid pointer-events-none absolute inset-0 opacity-35" />
-      <div className="pointer-events-none absolute -right-40 top-16 h-[34rem] w-[34rem] rounded-full bg-cyan-300/5 blur-3xl" />
-      <div className="pointer-events-none absolute -left-48 bottom-0 h-96 w-96 rounded-full bg-amber-300/5 blur-3xl" />
+    <section id="events" className="relative scroll-mt-20 border-t border-line py-16 sm:py-24">
+      <div className="bg-grid pointer-events-none absolute inset-0" />
 
       <div className="relative mx-auto w-full max-w-7xl px-4 sm:px-6">
         <div className="grid gap-10 lg:grid-cols-[1fr_0.85fr] lg:items-end">
           <div>
-            <p className="font-mono text-xs font-medium uppercase tracking-[0.24em] text-cyan-300">{t("events.kicker")}</p>
-            <h2 className="mt-4 max-w-3xl text-3xl font-semibold tracking-tight text-zinc-50 sm:text-5xl">{t("events.title")}</h2>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-400 sm:text-lg">{t("events.subtitle")}</p>
+            <div className="flex items-baseline gap-5">
+              <p className="font-mono text-sm leading-none text-inkfaint">04</p>
+              <p className="border-t border-line pt-3 text-xs leading-5 text-inkdim">{t("events.kicker")}</p>
+            </div>
+            <h2 className="mt-4 max-w-3xl text-balance text-2xl font-semibold leading-[1.12] tracking-[-0.021em] text-foreground sm:text-4xl">{t("events.title")}</h2>
+            <p className="mt-4 max-w-[68ch] text-sm leading-7 text-inkdim sm:text-[0.975rem]">{t("events.subtitle")}</p>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2">
             {STATUS_ORDER.map((status) => {

@@ -45,6 +45,7 @@ export default function Links() {
   return (
     <Section
       id="links"
+      index="09"
       kicker={t("links.kicker")}
       title={t("links.title")}
       subtitle={t("links.subtitle")}

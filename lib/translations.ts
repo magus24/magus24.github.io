@@ -29,6 +29,11 @@ const en = {
     behindFlag: "behind a flag",
     radarLabel: "Event readiness radar",
     radarCaption: "A wiring map, not a confidence score",
+    axisNote: "seconds of the clip, measured",
+    wallTime: "wall time to analyse, 2.28× the clip",
+    budget: "budget the metric allows",
+    alarmed: "frames above the alarm threshold",
+    saturating: "detectors covering most of the clip",
     feed: {
       camera: "CAM-01 · FIXED VIEW",
       recording: "REC",
@@ -268,6 +273,11 @@ const uz: Dict = {
     behindFlag: "flag orqali",
     radarLabel: "Hodisa tayyorlik radarsı",
     radarCaption: "Ishonch darajasi emas, wiring xaritasi",
+    axisNote: "klipning soniyalari, o'lchangan",
+    wallTime: "tahlil qilish vaqti, klipning 2.28 barishi",
+    budget: "metrika beradigan byudjet",
+    alarmed: "alarm chegarasidan yuqori kadrlar",
+    saturating: "klipning ko'p qismini qoplagan detektorlar",
     feed: {
       camera: "KAM-01 · STATSIONAR KO'RINISH",
       recording: "REC",
