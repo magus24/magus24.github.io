@@ -161,7 +161,13 @@ const en = {
     progress: { uploading: "Uploading", processing: "Processing", done: "Done" },
     noBackend: {
       title: "Inference backend is not deployed",
-      body: "This site is a static GitHub Pages build, so the analysis runs on a separate server that holds the CUDA weights. Start it locally against the submitted package:",
+      body: "This site is a static GitHub Pages build, so the analysis runs on a separate server that holds the CUDA weights. There is no upload control here on purpose: we would rather show you nothing than a button that cannot work. Start the backend locally against the submitted package:",
+      deploy:
+        "To make the live upload work on the deployed site, set the API_BASE_URL repository variable to the backend origin and redeploy - the upload UI returns with no code change.",
+    },
+    recorded: {
+      badge: "RECORDED RUN",
+      body: "Not a live query: this is the actual output our pipeline produced on C3905.MP4, read straight out of predictions_samples.json - the same 14 event segments and the Part B risk curve a live request returns. Upload a clip yourself once the backend is running.",
     },
     errors: {
       noFile: "Please select a video first.",
@@ -394,7 +400,12 @@ const uz: Dict = {
     progress: { uploading: "Yuklash", processing: "Ishlash", done: "Tayyor" },
     noBackend: {
       title: "Inference backend joylashgan emas",
-      body: "Bu sayt GitHub Pages uchun statik qilingan, shuning uchun tahlil CUDA og'irliklarini saqlovchi alohida serverda bajariladi. Topshirilgan paketga qarab mahalliyda ishga tushiring:",
+      body: "Bu sayt GitHub Pages uchun statik qilingan, shuning uchun tahlil CUDA og'irliklarini saqlovchi alohida serverda bajariladi. Bu yerda yuklash tugmasi ataylab qo'yilmaydi: ishlaydigan tugmani ko'rsatganimizdan ko'ra hech narsani ko'rsatmaslik yaxshiroq. Topshirilgan paketga qarab mahalliyda ishga tushiring:",
+      deploy: "Deploy qilingan saytda jonli yuklash ishlashi uchun API_BASE_URL repository o'zgaruvchisini backend manziliga qo'ying va qayta deploy qiling — kod o'zgarishsiz yuklash interfeysi qaytadi.",
+    },
+    recorded: {
+      badge: "QAYD ETILGAN ISHGA TUSHIRISH",
+      body: "Bu jonli so'rov emas: pipelineimiz C3905.MP4 da bergan haqiqiy natija — predictions_samples.json dan to'g'ridan-to'g'ri olingan 14 ta hodisa segmenti va Part B xavf egri chizig'i, xuddi shu shaklda qaytaradigan. Backend ishga tushgach, klipni o'zingiz yuklab ko'ring.",
     },
     errors: {
       noFile: "Avval video tanlang.",
