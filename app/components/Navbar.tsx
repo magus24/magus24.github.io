@@ -41,12 +41,11 @@ export default function Navbar() {
     <header className="fixed inset-x-0 top-0 z-50 border-b border-line bg-background/80 backdrop-blur-xl">
       <nav className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between px-4 sm:px-6">
         <a href="#top" className="flex items-center gap-2.5">
-          <span className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-300/25 bg-cyan-300/10">
-            <span className="absolute h-5 w-5 rounded-full border border-cyan-200/40" />
-            <span className="h-2 w-2 rounded-full bg-amber-300 shadow-[0_0_14px_rgba(255,196,107,.8)]" />
+          <span className="relative flex h-9 w-9 items-center justify-center rounded border border-line bg-surface2">
+            <span className="h-2.5 w-2.5 rounded-[2px] bg-signal" />
           </span>
-          <span className="text-sm font-semibold tracking-tight text-zinc-100">
-            TRAFFIC <span className="text-cyan-200">/ INTELLIGENCE</span>
+          <span className="text-sm font-semibold tracking-tight text-foreground">
+            TRAFFIC <span className="text-inkdim">/ INTELLIGENCE</span>
           </span>
         </a>
 

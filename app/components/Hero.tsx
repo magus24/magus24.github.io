@@ -65,7 +65,10 @@ function MeasuredRun() {
     .join(" ");
 
   return (
-    <div className="glass p-4 sm:p-6">
+    /* min-w-0: a grid item defaults to min-width:auto, so the chart's 680px
+       floor would otherwise inflate the whole card to 714px inside a 390px
+       viewport - cropped by the body with nothing to scroll. */
+    <div className="glass min-w-0 p-4 sm:p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-line pb-3">
         <p className="text-sm font-medium text-foreground">{run.title}</p>
         <p className="font-mono text-xs text-inkfaint">
@@ -73,9 +76,14 @@ function MeasuredRun() {
         </p>
       </div>
 
+      {/* A 760x360 timeline scaled into a 324px column puts 4px labels on the
+          screen. Below the sm breakpoint the chart keeps its intrinsic width
+          and the card scrolls sideways instead, so the class names stay
+          readable. Scrolling is contained here, so the page never overflows. */}
+      <div className="mt-4 overflow-x-auto pb-1">
       <svg
         viewBox={`0 0 ${W} ${H}`}
-        className="mt-4 w-full"
+        className="w-full min-w-[680px] sm:min-w-0"
         role="img"
         aria-label={`Part B risk curve and ${RUN_FACTS.events} event segments measured on ${run.title}`}
       >
@@ -166,6 +174,7 @@ function MeasuredRun() {
           {t("hero.axisNote")}
         </text>
       </svg>
+      </div>
 
       <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded border border-line bg-line sm:grid-cols-4">
         {[
@@ -191,7 +200,7 @@ export default function Hero() {
     <section id="top" className="hero-section relative overflow-hidden">
       <div className="bg-grid pointer-events-none absolute inset-0" />
       <div className="relative mx-auto grid w-full max-w-7xl gap-12 px-4 pb-20 pt-28 sm:px-6 sm:pt-32 lg:grid-cols-[0.85fr_1.15fr] lg:items-center lg:gap-16">
-        <div>
+        <div className="min-w-0">
           <div className="inline-flex items-center gap-2 rounded border border-line px-2.5 py-1 text-xs text-inkdim">
             <span className="h-1.5 w-1.5 rounded-[1px] bg-signal" />
             {t("hero.badge")}

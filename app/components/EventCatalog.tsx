@@ -191,7 +191,7 @@ export default function EventCatalog() {
         <div className="grid gap-10 lg:grid-cols-[1fr_0.85fr] lg:items-end">
           <div>
             <div className="flex items-baseline gap-5">
-              <p className="font-mono text-sm leading-none text-inkfaint">04</p>
+              <p className="font-mono text-sm leading-none text-inkfaint">03</p>
               <p className="border-t border-line pt-3 text-xs leading-5 text-inkdim">{t("events.kicker")}</p>
             </div>
             <h2 className="mt-4 max-w-3xl text-balance text-2xl font-semibold leading-[1.12] tracking-[-0.021em] text-foreground sm:text-4xl">{t("events.title")}</h2>
@@ -248,12 +248,10 @@ export default function EventCatalog() {
           })}
         </div>
 
-        <div className="mt-6 grid overflow-hidden rounded-3xl border border-line bg-surface shadow-2xl shadow-slate-950/20 lg:grid-cols-[0.72fr_1.28fr]">
-          <div className={`relative overflow-hidden border-b border-line bg-gradient-to-br p-6 sm:p-8 lg:border-b-0 lg:border-r ${selectedMeta.panel}`}>
-            <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full border border-cyan-200/10" />
-            <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full border border-cyan-200/10" />
+        <div className="mt-6 grid overflow-hidden rounded border border-line bg-surface lg:grid-cols-[0.72fr_1.28fr]">
+          <div className={`relative min-w-0 overflow-hidden border-b border-line bg-gradient-to-br p-6 sm:p-8 lg:border-b-0 lg:border-r ${selectedMeta.panel}`}>
             <div className="relative">
-              <div className="flex items-center justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+              <div className="flex items-center justify-between gap-3 font-mono text-[10px] text-inkfaint">
                 <span>{t("events.selected")}</span>
                 <span>{String(selectedIndex + 1).padStart(2, "0")} / 14</span>
               </div>
@@ -265,22 +263,22 @@ export default function EventCatalog() {
               <div className="mt-6"><StatusPill readiness={selectedReport.readiness} /></div>
               <p className="mt-8 text-sm leading-7 text-zinc-400">{selectedReport.summary}</p>
               <div className="mt-8 flex flex-wrap gap-2">
-                <a href="#demo" className="inline-flex h-10 items-center gap-2 rounded-lg bg-cyan-300 px-4 text-xs font-semibold text-slate-950 transition-colors hover:bg-cyan-200">
+                <a href="#demo" className="inline-flex h-10 items-center gap-2 rounded bg-signal px-4 text-xs font-semibold text-[#14100a] transition-colors hover:bg-amber-300">
                   {t("events.openDemo")}
                   <span aria-hidden="true">↗</span>
                 </a>
-                <a href="#approach" className="inline-flex h-10 items-center gap-2 rounded-lg border border-line bg-background/40 px-4 text-xs font-semibold text-zinc-300 transition-colors hover:border-cyan-300/40">
+                <a href="#approach" className="inline-flex h-10 items-center gap-2 rounded border border-line bg-background/40 px-4 text-xs font-semibold text-inkdim transition-colors hover:border-inkfaint hover:text-foreground">
                   {t("events.seeArchitecture")}
                 </a>
               </div>
             </div>
           </div>
 
-          <div className="p-6 sm:p-8">
+          <div className="min-w-0 p-6 sm:p-8">
             <div className="flex flex-wrap items-end justify-between gap-3 border-b border-line pb-5">
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">{t("events.implementation")}</p>
-                <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-400">{t("events.pathNote")}</p>
+                <p className="font-mono text-[10px] text-inkfaint">{t("events.implementation")}</p>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-inkdim">{t("events.pathNote")}</p>
               </div>
               <span className={`font-mono text-xs ${selectedMeta.text}`}>{selectedReport.completedSteps}/{selectedReport.steps.length} steps</span>
             </div>
