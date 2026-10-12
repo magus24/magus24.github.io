@@ -71,23 +71,78 @@ export interface NeuralSystem {
   edgeOp: number
 }
 
-function envelopeR(rnd: () => number, dir: THREE.Vector3, seedId: number) {
-  const th = Math.atan2(dir.z, dir.x)
-  const ph = Math.acos(THREE.MathUtils.clamp(dir.y, -1, 1))
-  const wob =
+/* ------------------------------------------------------------------ *
+ * Human-brain geometry: nodes are sampled inside a two-hemisphere      *
+ * brain volume — a longitudinal fissure along the top midline, a       *
+ * folded cortical surface (gyri/sulci), a temporal-lobe swell, a       *
+ * flattened base and a separate cerebellum. Everything is built in     *
+ * "design units" and then rescaled so the longest axis meets the       *
+ * configured field envelope.                                           *
+ * ------------------------------------------------------------------ */
+
+const BRAIN_REGIONS: Array<[number, number, number]> = [
+  [0.62, 0.34, 0.62], // left frontal
+  [-0.62, 0.34, 0.62], // right frontal
+  [0.78, -0.12, 0.04], // left temporal
+  [-0.78, -0.12, 0.04], // right temporal
+  [0.58, 0.36, -0.62], // left parieto-occipital
+  [-0.58, 0.36, -0.62], // right parieto-occipital
+  [0.0, -0.46, -0.7], // cerebellum
+]
+
+type BrainShape = NeuralConfig['brain']
+
+/** coherent gyri/sulci — a wrinkled cortical surface for a given direction */
+function brainFold(nx: number, ny: number, nz: number) {
+  const th = Math.atan2(nz, nx)
+  const ph = Math.asin(THREE.MathUtils.clamp(ny, -1, 1))
+  return (
     1 +
-    0.16 * Math.sin(3 * th + 1.3 + seedId) * Math.cos(2 * ph + seedId * 0.7) +
-    0.07 * Math.sin(5 * ph + seedId * 0.31) +
-    (rnd() - 0.5) * 0.02
-  return Math.max(0.86, wob)
+    0.06 * Math.sin(6 * th + 1.3) * Math.cos(5 * ph) +
+    0.045 * Math.sin(9 * th + 2.1) * Math.sin(4 * ph + 0.6) +
+    0.03 * Math.cos(14 * th + 0.4) * Math.cos(7 * ph)
+  )
 }
 
-export function nearestCluster(clusters: THREE.Vector3[], dir: THREE.Vector3): number {
+/** a point on the folded cerebral surface for a random direction */
+function brainSurface(rnd: () => number, out: THREE.Vector3, b: BrainShape) {
+  randUnit(rnd, out)
+  const f = brainFold(out.x, out.y, out.z)
+  let x = out.x * b.ax * f
+  let y = out.y * b.ay * f
+  let z = out.z * b.az * f
+  if (y < 0) y *= 0.86 // the base is flatter than the domed top
+  const temporal = Math.max(0, -out.y) * Math.max(0, 1 - Math.abs(out.z) * 1.15)
+  x *= 1 + 0.1 * temporal // temporal-lobe swell on the lower sides
+  x *= 1 - (0.14 * Math.max(0, Math.abs(out.z) - 0.72)) / 0.28 // front/back taper
+  if (y > 0) {
+    // longitudinal fissure: a groove along the top midline
+    const g = Math.exp(-((x / 0.34) ** 2))
+    y -= 0.2 * g * Math.min(1, out.y * 1.7)
+  }
+  out.set(x, y, z)
+  return out
+}
+
+function cerebellumPoint(rnd: () => number, out: THREE.Vector3, b: BrainShape) {
+  randUnit(rnd, out).multiplyScalar(0.55 + rnd() * 0.45)
+  out.set(
+    out.x * b.cerebellum.rx,
+    b.cerebellum.y + out.y * b.cerebellum.ry,
+    b.cerebellum.z + out.z * b.cerebellum.rz,
+  )
+  return out
+}
+
+export function nearestCluster(clusters: THREE.Vector3[], p: THREE.Vector3): number {
   let best = 0
-  let bd = -Infinity
+  let bd = Infinity
   for (let k = 0; k < clusters.length; k++) {
-    const d = dir.x * clusters[k].x + dir.y * clusters[k].y + dir.z * clusters[k].z
-    if (d > bd) {
+    const dx = p.x - clusters[k].x
+    const dy = p.y - clusters[k].y
+    const dz = p.z - clusters[k].z
+    const d = dx * dx + dy * dy + dz * dz
+    if (d < bd) {
       bd = d
       best = k
     }
@@ -95,34 +150,21 @@ export function nearestCluster(clusters: THREE.Vector3[], dir: THREE.Vector3): n
   return best
 }
 
-const tmpBlend = new THREE.Vector3()
-
 export function createNeuralSystem(config: NeuralConfig, tier: NeuralTier): NeuralSystem {
   const budget = config.tiers[tier]
   const n = budget.nodes
   const rnd = mulberry32(0x5eed)
   const R = config.outerR
-  const C = config.clusters
+  const B = config.brain
   const sentinel = n
 
-  /* ---------- cluster centres ---------- */
-  const clusters: THREE.Vector3[] = []
-  const GA = Math.PI * (3 - Math.sqrt(5))
-  for (let k = 0; k < C; k++) {
-    const y = 1 - (2 * k + 1) / C
-    const th = GA * k + (rnd() - 0.5) * 1.6
-    const r = Math.sqrt(Math.max(0, 1 - y * y))
-    randUnit(rnd, tmpBlend)
-    const dir = tmpBlend
-      .set(Math.cos(th) * r, y * 0.86, Math.sin(th) * r)
-      .normalize()
-    clusters.push(dir.clone().multiplyScalar(R * (0.46 + rnd() * 0.24)))
-  }
+  /* ---------- brain regions (cluster centres, design units) ---------- */
+  const regionDirs = BRAIN_REGIONS.map((d) => new THREE.Vector3(d[0], d[1], d[2]))
+  const C = regionDirs.length
+  const CB = C - 1 // cerebellum cluster index
 
-  /* ---------- nodes ---------- */
-  const positions = new Float32Array(n * 3)
-  const basePos = new Float32Array(n * 3)
-  const radius = new Float32Array(n)
+  /* ---------- nodes sampled inside the brain volume ---------- */
+  const raw = new Float32Array(n * 3)
   const cluster = new Int8Array(n)
   const accent = new Float32Array(n)
   const scale = new Float32Array(n)
@@ -130,56 +172,56 @@ export function createNeuralSystem(config: NeuralConfig, tier: NeuralTier): Neur
   const dir = new THREE.Vector3()
 
   for (let i = 0; i < n; i++) {
-    const band = rnd()
-    let rad: number
-    randUnit(rnd, dir)
-    if (band < 0.34) {
-      rad = 0.44 + rnd() * 0.44
-    } else if (band < 0.72) {
-      rad = 0.82 + rnd() * 0.5
+    let ci: number
+    if (rnd() < B.cerebellum.frac) {
+      cerebellumPoint(rnd, dir, B)
+      ci = CB
     } else {
-      const env = envelopeR(rnd, dir, i)
-      rad = 1.3 + rnd() * (R * env - 1.3)
+      brainSurface(rnd, dir, B)
+      const band = rnd()
+      const s =
+        band < 0.68
+          ? 0.84 + rnd() * 0.16 // cortical shell
+          : band < 0.9
+            ? 0.5 + rnd() * 0.34 // inner cortex
+            : 0.12 + rnd() * 0.4 // deep (thalamic) nodes
+      dir.multiplyScalar(s)
+      ci = nearestCluster(regionDirs, dir)
     }
-
-    const ci = nearestCluster(clusters, dir)
+    raw[i * 3] = dir.x
+    raw[i * 3 + 1] = dir.y
+    raw[i * 3 + 2] = dir.z
     cluster[i] = ci
-
-    let px: number
-    let py: number
-    let pz: number
-    if (band < 0.34) {
-      // condensed near the core, pulled toward the owning cluster
-      const pull = 0.35 + rnd() * 0.3
-      randUnit(rnd, tmpBlend)
-      px = dir.x * rad * pull + tmpBlend.x * rad * (1 - pull)
-      py = dir.y * rad * pull + tmpBlend.y * rad * (1 - pull)
-      pz = dir.z * rad * pull + tmpBlend.z * rad * (1 - pull)
-    } else {
-      const pull = 0.45 + rnd() * 0.35
-      const c = clusters[ci]
-      const cn = 1 / Math.sqrt(c.x * c.x + c.y * c.y + c.z * c.z)
-      const cx = c.x * cn
-      const cy = c.y * cn
-      const cz = c.z * cn
-      px = (dir.x * (1 - pull) + cx * pull) * rad
-      py = (dir.y * (1 - pull) + cy * pull) * rad
-      pz = (dir.z * (1 - pull) + cz * pull) * rad
-    }
-
-    py *= 0.92
-
-    positions[i * 3] = px
-    positions[i * 3 + 1] = py
-    positions[i * 3 + 2] = pz
-    basePos[i * 3] = px
-    basePos[i * 3 + 1] = py
-    basePos[i * 3 + 2] = pz
-    radius[i] = Math.sqrt(px * px + py * py + pz * pz)
     accent[i] = rnd() < config.accentRatio ? 1 : 0
     scale[i] = 0.7 + rnd() * 0.6
     phase[i] = rnd() * Math.PI * 2
   }
+
+  /* ---------- normalise so the longest axis reaches the envelope ---------- */
+  let maxR = 0
+  for (let i = 0; i < n; i++) {
+    const r = Math.hypot(raw[i * 3], raw[i * 3 + 1], raw[i * 3 + 2])
+    if (r > maxR) maxR = r
+  }
+  const k = maxR > 1e-4 ? (R * 0.82) / maxR : 1
+
+  const positions = new Float32Array(n * 3)
+  const basePos = new Float32Array(n * 3)
+  const radius = new Float32Array(n)
+  for (let i = 0; i < n; i++) {
+    const x = raw[i * 3] * k
+    const y = raw[i * 3 + 1] * k
+    const z = raw[i * 3 + 2] * k
+    positions[i * 3] = x
+    positions[i * 3 + 1] = y
+    positions[i * 3 + 2] = z
+    basePos[i * 3] = x
+    basePos[i * 3 + 1] = y
+    basePos[i * 3 + 2] = z
+    radius[i] = Math.hypot(x, y, z)
+  }
+
+  const clusters = regionDirs.map((d) => d.clone().multiplyScalar(k))
 
   /* ---------- filaments ---------- */
   const edges: FieldEdge[] = []

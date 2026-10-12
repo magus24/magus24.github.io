@@ -76,21 +76,6 @@ export function NeuralField({
 }: NeuralFieldProps) {
   const group = useRef<THREE.Group>(null)
   const sys = useMemo(() => createFieldSystem(spec), [spec])
-  const boundaryMat = useMemo(
-    () =>
-      new THREE.LineBasicMaterial({
-        color: 0xa4b2da,
-        transparent: true,
-        opacity: 0.08,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-      }),
-    [],
-  )
-  const boundaryGeo = useMemo(
-    () => new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(NEURAL_CONFIG.outerR, 0)),
-    [],
-  )
   const swQ = useMemo(() => sys.clusters.map(() => new THREE.Quaternion()), [sys.clusters])
   const swAxis = useMemo(
     () => sys.clusters.map((c) => c.clone().normalize()),
@@ -176,7 +161,7 @@ export function NeuralField({
     for (let k = 0; k < Math.min(sys.clusters.length, clusterOsc.length); k++) {
       clusterOsc[k] = 1 + oscAmp * Math.sin(driftPhase + k * 2.1)
       if (!reducedMotion) {
-        swQ[k].setFromAxisAngle(swAxis[k], 0.05 * Math.sin(t * 0.07 + k * 1.7))
+        swQ[k].setFromAxisAngle(swAxis[k], 0.03 * Math.sin(t * 0.07 + k * 1.7))
       } else {
         swQ[k].identity()
       }
@@ -208,7 +193,6 @@ export function NeuralField({
     /* node colours + sizes (depth-cued) */
     sys.op = st.op
     sys.edgeOp = st.edgeOp
-    boundaryMat.opacity = Math.min(0.12, 0.05 + st.op * 0.07)
     const glow = sys.glow
     const nodeSizeArr = sys.nodeSizeArr
     const nodeCol = sys.nodeColorArr
@@ -337,8 +321,6 @@ export function NeuralField({
 
   return (
     <group ref={group}>
-      {/* system boundary — a faint shell enclosing the whole field */}
-      <lineSegments geometry={boundaryGeo} material={boundaryMat} frustumCulled={false} />
       <NeuralDendrites sys={sys} />
       <NeuralNodes sys={sys} />
       <NeuralConnections sys={sys} />

@@ -54,6 +54,15 @@ export interface NeuralConfig {
   weave: number
   /** max distance (field units) for a local weave link */
   weaveDist: number
+  /** human-brain shaping of the surrounding field */
+  brain: {
+    /** cerebral half-extents in design units: width, height, length */
+    ax: number
+    ay: number
+    az: number
+    /** cerebellum — fraction of nodes placed there plus its position + size */
+    cerebellum: { frac: number; y: number; z: number; rx: number; ry: number; rz: number }
+  }
 }
 
 export const NEURAL_CONFIG: NeuralConfig = {
@@ -62,7 +71,7 @@ export const NEURAL_CONFIG: NeuralConfig = {
     2: { nodes: 118, edges: 110, signals: 5, stars: 150 },
     3: { nodes: 200, edges: 192, signals: 7, stars: 210 },
   },
-  clusters: 4,
+  clusters: 7,
   coreRadius: 0.55,
   innerCutoff: 0.4,
   outerR: 2.12,
@@ -80,6 +89,12 @@ export const NEURAL_CONFIG: NeuralConfig = {
   accentRatio: 0.2,
   weave: 3,
   weaveDist: 0.72,
+  brain: {
+    ax: 0.95,
+    ay: 0.63,
+    az: 1.05,
+    cerebellum: { frac: 0.1, y: -0.46, z: -0.7, rx: 0.5, ry: 0.25, rz: 0.34 },
+  },
 }
 
 export function tierFor(spec: Spec): NeuralTier {
