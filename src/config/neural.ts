@@ -36,10 +36,14 @@ export interface NeuralConfig {
   drift: number
   /** how strongly the pointer tilts the whole field */
   interactionTilt: number
-  /** base small point size (world units) */
+  /** base node size in WORLD UNITS (the billboard is 1 world unit) */
   nodeSize: number
   /** size multiplier for the brighter / active nodes */
   nodeActiveSize: number
+  /** gentle per-node breathing: 0..1 fraction of node size, phase-offset */
+  nodePulse: number
+  /** short dendrite stubs that make every node read as a neuron */
+  dendrites: { perNode: number; length: number; ratio: number }
   /** traveling signal particle size (world units) */
   signalSize: number
   /** how fast spark energy fades from nodes */
@@ -67,13 +71,15 @@ export const NEURAL_CONFIG: NeuralConfig = {
   signalSpeed: [0.8, 1.4],
   drift: 0.09,
   interactionTilt: 0.06,
-  nodeSize: 0.034,
+  nodeSize: 0.05,
   nodeActiveSize: 1.4,
+  nodePulse: 0.16,
+  dendrites: { perNode: 2, length: 0.2, ratio: 0.85 },
   signalSize: 0.05,
   sparkDecay: 2.3,
   accentRatio: 0.2,
-  weave: 2,
-  weaveDist: 1.05,
+  weave: 3,
+  weaveDist: 0.72,
 }
 
 export function tierFor(spec: Spec): NeuralTier {
@@ -103,7 +109,7 @@ export interface FieldState {
 }
 
 export const FIELD_STATES: Record<string, FieldState> = {
-  seed: { r: 1.0, op: 0.5, edgeOp: 0.34 },
+  seed: { r: 1.0, op: 0.58, edgeOp: 0.44 },
   open: { r: 1.12, op: 0.78, edgeOp: 0.5 },
   systems: { r: 1.2, op: 0.95, edgeOp: 0.62 },
   network: { r: 1.32, op: 1.05, edgeOp: 0.8 },

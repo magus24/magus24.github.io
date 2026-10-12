@@ -211,12 +211,12 @@ export function CoreArtifact({
       q.scale.set(c.pScale, c.pScale, c.pScale * c.pFlatten)
     }
 
-    if (outerMat.current) outerMat.current.opacity = c.outer + p * 0.25
-    if (innerMat.current) innerMat.current.opacity = c.inner + p * 0.3
-    if (octaMat.current) octaMat.current.opacity = 0.4 + c.octa * 0.55 + p * 0.2
-    if (ballMat.current) ballMat.current.opacity = c.ball * 0.9 + p * 0.4
-    if (ringMat.current) ringMat.current.opacity = c.ringOp + p * 0.15
-    if (partsMat.current) partsMat.current.opacity = c.pOp + p * 0.15
+    if (outerMat.current) outerMat.current.opacity = c.outer * 0.28 + p * 0.12
+    if (innerMat.current) innerMat.current.opacity = c.inner * 0.4
+    if (octaMat.current) octaMat.current.opacity = 0.45 + c.octa * 0.5 + p * 0.18
+    if (ballMat.current) ballMat.current.opacity = c.ball * 0.9 + p * 0.45
+    if (ringMat.current) ringMat.current.opacity = c.ringOp * 0.4 + p * 0.1
+    if (partsMat.current) partsMat.current.opacity = c.pOp * 0.42 + p * 0.08
 
     if (spec.parallax && !reducedMotion) {
       camera.position.x = dampV(camera.position.x, pointer.x * 0.55)

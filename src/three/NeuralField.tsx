@@ -10,6 +10,7 @@ import { createNeuralSystem, type NeuralSystem } from './system'
 import { NeuralNodes } from './NeuralNodes'
 import { NeuralConnections } from './NeuralConnections'
 import { SignalFlow } from './SignalFlow'
+import { NeuralDendrites } from './NeuralDendrites'
 
 /** Shared event channel: NeuralField raises pulses, CoreArtifact reacts to them. */
 export interface CoreEvent {
@@ -78,9 +79,9 @@ export function NeuralField({
   const boundaryMat = useMemo(
     () =>
       new THREE.LineBasicMaterial({
-        color: 0x8fa5e8,
+        color: 0xa4b2da,
         transparent: true,
-        opacity: 0.1,
+        opacity: 0.08,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       }),
@@ -89,6 +90,11 @@ export function NeuralField({
   const boundaryGeo = useMemo(
     () => new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(NEURAL_CONFIG.outerR, 0)),
     [],
+  )
+  const swQ = useMemo(() => sys.clusters.map(() => new THREE.Quaternion()), [sys.clusters])
+  const swAxis = useMemo(
+    () => sys.clusters.map((c) => c.clone().normalize()),
+    [sys.clusters],
   )
   const pointer = useMemo(() => ({ x: 0, y: 0 }), [])
   const lastT = useRef(0)
@@ -162,20 +168,26 @@ export function NeuralField({
     }
     const mw = groupObj ? groupObj.matrixWorld : IDENTITY
 
-    /* node positions: base + slow cluster drift + project theme blend */
+    /* node positions: base + cluster sway + slow breath + project theme blend */
     const positions = sys.positions
     const base = sys.basePos
     const oscAmp = reducedMotion ? 0 : 0.035
     const driftPhase = reducedMotion ? 0 : t * 0.09
     for (let k = 0; k < Math.min(sys.clusters.length, clusterOsc.length); k++) {
       clusterOsc[k] = 1 + oscAmp * Math.sin(driftPhase + k * 2.1)
+      if (!reducedMotion) {
+        swQ[k].setFromAxisAngle(swAxis[k], 0.05 * Math.sin(t * 0.07 + k * 1.7))
+      } else {
+        swQ[k].identity()
+      }
     }
     for (let i = 0; i < sys.count; i++) {
       const c = sys.cluster[i]
       const o = clusterOsc[c]
-      positions[i * 3] = base[i * 3] * o
-      positions[i * 3 + 1] = base[i * 3 + 1] * o
-      positions[i * 3 + 2] = base[i * 3 + 2] * o
+      tmp2.set(base[i * 3] * o, base[i * 3 + 1] * o, base[i * 3 + 2] * o).applyQuaternion(swQ[c])
+      positions[i * 3] = tmp2.x
+      positions[i * 3 + 1] = tmp2.y
+      positions[i * 3 + 2] = tmp2.z
     }
     if (st.themeT > 0.001 && theme) {
       const blend = st.themeT * 0.55
@@ -196,7 +208,7 @@ export function NeuralField({
     /* node colours + sizes (depth-cued) */
     sys.op = st.op
     sys.edgeOp = st.edgeOp
-    boundaryMat.opacity = Math.min(0.22, 0.08 + st.op * 0.12 + st.hover * 0.02)
+    boundaryMat.opacity = Math.min(0.12, 0.05 + st.op * 0.07)
     const glow = sys.glow
     const nodeSizeArr = sys.nodeSizeArr
     const nodeCol = sys.nodeColorArr
@@ -211,19 +223,20 @@ export function NeuralField({
       sys.depth[i] = d
 
       const g = glow[i]
-      const accT = sys.accent[i] * (0.3 + g * 0.7 + hover * 0.4)
-      const bright = Math.max(0.05, (1 - d * 0.52) * 0.85 + g * 0.55 + hover * 0.06) * op
+      const accT = sys.accent[i] * (0.35 + g * 0.65 + hover * 0.35)
+      const bright =
+        Math.max(0.14, (1 - d * 0.45) * 1.05 + g * 0.6 + hover * 0.04) * (0.52 + op * 0.7)
 
       nodeSizeArr[i] =
         cfg.nodeSize *
         sys.scale[i] *
-        (1.4 - d * 0.7) *
-        (1 + g * 0.35) *
-        (1 + (sys.accent[i] ? cfg.nodeActiveSize - 1 : 0) * 0.3)
+        (1.35 - d * 0.55) *
+        (1 + g * 0.3) *
+        (1 + (sys.accent[i] ? cfg.nodeActiveSize - 1 : 0) * 0.4)
 
-      const cr = (0.92 - d * 0.4) * bright
-      const cg = (0.93 - d * 0.4) * bright
-      const cb = (0.97 - d * 0.35) * bright
+      const cr = (0.92 - d * 0.38) * bright
+      const cg = (0.94 - d * 0.38) * bright
+      const cb = (0.98 - d * 0.34) * bright
       const accTb = Math.min(accT, 1)
       nodeCol[i * 3] = cr + (0.32 - cr) * accTb
       nodeCol[i * 3 + 1] = cg + (0.5 - cg) * accTb
@@ -326,6 +339,7 @@ export function NeuralField({
     <group ref={group}>
       {/* system boundary — a faint shell enclosing the whole field */}
       <lineSegments geometry={boundaryGeo} material={boundaryMat} frustumCulled={false} />
+      <NeuralDendrites sys={sys} />
       <NeuralNodes sys={sys} />
       <NeuralConnections sys={sys} />
       <SignalFlow sys={sys} size={NEURAL_CONFIG.signalSize} />

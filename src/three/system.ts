@@ -9,7 +9,7 @@ import { mulberry32, randUnit } from './math'
  * stays fixed — dynamics live in NeuralField.
  */
 
-export type EdgeKind = 0 | 1 | 2 // thread (inward) | weave (local) | feed (into core)
+export type EdgeKind = 0 | 1 | 2 | 3 // thread (inward) | weave (local) | bridge (cluster) | feed (into core)
 
 export interface FieldEdge {
   a: number
@@ -35,6 +35,8 @@ export interface NeuralSystem {
   basePos: Float32Array
   /** current distance from the core centre */
   radius: Float32Array
+  /** start positions of per-node dendrite stubs (n * perNode * 3), zeroed where absent */
+  dendDirs: Float32Array
   cluster: Int8Array
   /** 0 = passive white node, 1 = active-capable (blue) node */
   accent: Float32Array
@@ -188,18 +190,21 @@ export function createNeuralSystem(config: NeuralConfig, tier: NeuralTier): Neur
     const k = keyOf(a, b)
     if (key.has(k)) return
     key.add(k)
-    edges.push({ a, b, kind, intensity: 0.12 + rnd() * 0.3 })
+    const base =
+      kind === 0 ? 0.42 : kind === 1 ? 0.16 : kind === 2 ? 0.34 : 0.55
+    edges.push({ a, b, kind, intensity: base + rnd() * (kind === 3 ? 0.35 : 0.2) })
   }
 
   const outgoing = new Int32Array(n).fill(-1)
 
-  // inward synaptic threads: every non-core node reaches toward a closer node
+  const threshold = 0.95
+  // inward synaptic threads: the outer band reaches toward a closer node
   for (let i = 0; i < n; i++) {
     const ri = radius[i]
-    if (ri < config.innerCutoff) continue
+    if (ri < threshold) continue
     let best = -1
     let bd = Infinity
-    let long = rnd() < 0.12
+    let long = rnd() < 0.07
     for (let j = 0; j < n; j++) {
       if (j === i) continue
       const rj = radius[j]
@@ -222,7 +227,7 @@ export function createNeuralSystem(config: NeuralConfig, tier: NeuralTier): Neur
   }
 
   // weave: local cluster links (the short organic connections)
-  const weaveCount = Math.min(Math.ceil(n * 0.35), budget.edges)
+  const weaveCount = Math.min(Math.ceil(n * 0.34), budget.edges)
   let added = 0
   for (let i = 0; i < n && added < weaveCount; i++) {
     const ci = cluster[i]
@@ -255,9 +260,7 @@ export function createNeuralSystem(config: NeuralConfig, tier: NeuralTier): Neur
     const j = (k + 1) % C
     for (let i = 0; i < n; i++) {
       if (cluster[i] !== j) continue
-      const at = edges.length
-      addEdge(hub, i, 1)
-      void at
+      addEdge(hub, i, 2)
       break
     }
   }
@@ -266,14 +269,14 @@ export function createNeuralSystem(config: NeuralConfig, tier: NeuralTier): Neur
   const order: number[] = Array.from({ length: n }, (_, i) => i).sort(
     (a, b) => radius[a] - radius[b],
   )
-  const feedMax = Math.min(11, order.length)
+  const feedMax = Math.min(9, order.length)
   for (let k = 0; k < feedMax; k++) {
-    addEdge(order[k], sentinel, 2)
+    addEdge(order[k], sentinel, 3)
   }
 
-  // top-up with short random links if we are under budget
+  // reserve a small fraction of the budget for a few connective short links
   let guard = 0
-  while (edges.length < budget.edges && guard < n * 6) {
+  while (edges.length < budget.edges * 0.85 && guard < n * 5) {
     guard++
     const a = Math.floor(rnd() * n)
     const b = Math.floor(rnd() * n)
@@ -282,16 +285,41 @@ export function createNeuralSystem(config: NeuralConfig, tier: NeuralTier): Neur
     const dy = positions[a * 3 + 1] - positions[b * 3 + 1]
     const dz = positions[a * 3 + 2] - positions[b * 3 + 2]
     const sq = dx * dx + dy * dy + dz * dz
-    if (sq <= config.weaveDist * 1.15 * (config.weaveDist * 1.15)) addEdge(a, b, 1)
+    if (sq <= config.weaveDist * config.weaveDist * 1.25) addEdge(a, b, 1)
+  }
+
+  /* ---------- dendrite stubs (neurite tufts at each node) ---------- */
+  const perStub = config.dendrites.perNode
+  const dendDirs = new Float32Array(n * perStub * 3)
+  const tA = new THREE.Vector3()
+  const tB = new THREE.Vector3()
+  const tmpT = new THREE.Vector3()
+  for (let i = 0; i < n; i++) {
+    if (rnd() >= config.dendrites.ratio) continue
+    const d = dir.set(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]).normalize()
+    const nStub = 1 + Math.floor(rnd() * perStub)
+    for (let s = 0; s < nStub; s++) {
+      randUnit(rnd, tmpT)
+      tA.copy(d).cross(tmpT)
+      if (tA.lengthSq() < 1e-4) tA.set(1, 0, 0).cross(d)
+      tA.normalize()
+      // alternate: tangential tuft with a slight outward lean for organic shape
+      tB.copy(tA).multiplyScalar(0.85).addScaledVector(d, 0.32 * (s % 2 === 0 ? 1 : -1)).normalize()
+      const L = config.dendrites.length * (0.6 + rnd() * 0.8)
+      const o = (i * perStub + s) * 3
+      dendDirs[o] = tB.x * L
+      dendDirs[o + 1] = tB.y * L
+      dendDirs[o + 2] = tB.z * L
+    }
   }
 
   /* ---------- signal pool ---------- */
   const startEdges: number[] = []
   for (let e = 0; e < edges.length; e++) {
     const ed = edges[e]
-    if (ed.kind === 1) continue
+    if (ed.kind !== 0 && ed.kind !== 3) continue
     const srcR = ed.a === sentinel ? 0 : radius[ed.a]
-    if (srcR > 1.0 || ed.kind === 2) startEdges.push(e)
+    if (srcR > 1.0 || ed.kind === 3) startEdges.push(e)
   }
 
   const signals: FieldSignal[] = []
@@ -310,6 +338,7 @@ export function createNeuralSystem(config: NeuralConfig, tier: NeuralTier): Neur
     positions,
     basePos,
     radius,
+    dendDirs,
     cluster,
     accent,
     scale,
