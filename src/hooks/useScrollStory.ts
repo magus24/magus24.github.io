@@ -66,7 +66,7 @@ export function useCapabilities(): Spec {
  * is moving — the two signals that drive the CORE state machine.
  */
 export function useScrollStory() {
-  const [section, setSection] = useState<SectionId>('top')
+  const [section, setSection] = useState<SectionId>('mind')
   const velocity = useRef(0)
   const projectId = useRef<string | null>(null)
 
@@ -83,16 +83,16 @@ export function useScrollStory() {
       lastY = y
 
       const probe = y + window.innerHeight * 0.35
-      let current: SectionId = 'top'
+      let current: SectionId = 'mind'
       const ids = SECTIONS
       for (const id of ids) {
         const el = document.getElementById(id)
         if (!el) continue
         if (el.offsetTop <= probe) current = id
       }
-      // if the page bottom is reached, the finale owns the view
+      // if the page bottom is reached, contact owns the view
       if (window.innerHeight + y >= document.documentElement.scrollHeight - 8) {
-        current = 'finale'
+        current = 'contact'
       }
 
       projectId.current =

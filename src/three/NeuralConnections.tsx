@@ -34,9 +34,15 @@ export function NeuralConnections({ sys }: { sys: NeuralSystem }) {
     const active = sys.edgeActive
     const depth = sys.depth
     const throb = 0.5 + 0.5 * Math.sin(clock.getElapsedTime() * 0.22)
+    const m = sys.morph
 
     // chapter factor: quiet at the hero, wakes deeper in the page
     const chapter = Math.min(1, 0.55 + sys.edgeOp * 0.75)
+
+    // palette: warm amber-silver (human) → cool blue-white (machine)
+    const bR = 1.0 + (0.62 - 1.0) * m
+    const bG = 0.9 + (0.78 - 0.9) * m
+    const bB = 0.72 + (1.0 - 0.72) * m
 
     for (let e = 0; e < sys.edges.length; e++) {
       const { a: ai, b: bi, kind, intensity } = sys.edges[e]
@@ -59,20 +65,21 @@ export function NeuralConnections({ sys }: { sys: NeuralSystem }) {
       const depthFac = 1 - (da + db) * 0.28
 
       const hot = active[e]
+      // active edges flash electric only in the machine regime
+      const blu = Math.min(hot * 1.4, 1) * m
       const heat = intensity * (1.15 + hot * 1.55) * (0.9 + throb * 0.1) * chapter * depthFac
-      const blu = Math.min(hot * 1.4, 1)
-      const toward = kind === 0 || kind === 3
-      const r = heat * (0.84 - blu * 0.24)
-      const g = heat * (0.87 - blu * 0.18)
-      const bB = heat * (0.95 + blu * 0.5)
+      const r = heat * (bR - blu * 0.15)
+      const g = heat * (bG - blu * 0.1)
+      const bC = heat * (bB + blu * 0.5)
       // receiving (inner) end is brighter — edges visibly route toward the core
+      const toward = kind === 0 || kind === 3
       const grad = toward ? 0.68 : 0.85
       edgeCol[o] = r * grad
       edgeCol[o + 1] = g * grad
-      edgeCol[o + 2] = bB * grad
+      edgeCol[o + 2] = bC * grad
       edgeCol[o + 3] = r
       edgeCol[o + 4] = g
-      edgeCol[o + 5] = bB
+      edgeCol[o + 5] = bC
     }
 
     const posAttr = geo.getAttribute('position') as THREE.BufferAttribute

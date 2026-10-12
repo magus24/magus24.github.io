@@ -5,40 +5,32 @@ export interface MenuItem {
 }
 
 export const MENU_ITEMS: MenuItem[] = [
-  { index: '01', label: 'WORK', target: 'work' },
-  { index: '02', label: 'EXPERIMENTS', target: 'experiments' },
-  { index: '03', label: 'ABOUT', target: 'about' },
-  { index: '04', label: 'STACK', target: 'stack' },
-  { index: '05', label: 'JOURNEY', target: 'journey' },
-  { index: '06', label: 'CONTACT', target: 'contact' },
+  { index: '01', label: 'HUMAN MIND', target: 'mind' },
+  { index: '02', label: 'THE IDEA', target: 'idea' },
+  { index: '03', label: 'THE TRANSFER', target: 'transfer' },
+  { index: '04', label: 'INTELLIGENCE', target: 'ai' },
+  { index: '05', label: 'EXECUTION', target: 'execution' },
+  { index: '06', label: 'PROJECTS', target: 'work' },
+  { index: '07', label: 'EXPERIMENTS', target: 'experiments' },
+  { index: '08', label: 'ABOUT', target: 'about' },
+  { index: '09', label: 'CONTACT', target: 'contact' },
 ]
 
+/**
+ * The page is one connected journey: a human thought becomes an idea,
+ * crosses into a machine network, is executed into a product, and unfolds
+ * into the work itself.
+ */
 export const SECTIONS = [
-  'top',
-  'ideas',
-  'about',
+  'mind',
+  'idea',
+  'transfer',
+  'ai',
+  'execution',
   'work',
   'experiments',
-  'stack',
-  'journey',
+  'about',
   'contact',
-  'finale',
 ] as const
 
 export type SectionId = (typeof SECTIONS)[number]
-
-/**
- * Maps page sections to states of the CORE object.
- * The portfolio is a machine: each chapter changes how the core behaves.
- */
-export const CORE_STATES: Record<SectionId, string> = {
-  top: 'seed',
-  ideas: 'open',
-  about: 'open',
-  work: 'systems',
-  experiments: 'systems',
-  stack: 'network',
-  journey: 'open',
-  contact: 'reassemble',
-  finale: 'reassemble',
-}

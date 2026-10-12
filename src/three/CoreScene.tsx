@@ -3,8 +3,8 @@ import { useMemo, useRef } from 'react'
 import type { RefObject } from 'react'
 import type { Spec } from '../hooks/useScrollStory'
 import { CoreFallback } from '../components/CoreFallback'
-import { CoreArtifact } from './CoreArtifact'
 import { NeuralField, type CoreEvent } from './NeuralField'
+import { ExecutionVisualization } from './ExecutionVisualization'
 import { FieldBackdrop } from './FieldBackdrop'
 import { neuralBudget } from '../config/neural'
 
@@ -20,6 +20,8 @@ interface CoreSceneProps {
   projectId: RefObject<string | null>
   reducedMotion: boolean
 }
+
+const EXECUTION_SECTIONS = new Set(['execution', 'work', 'experiments'])
 
 export function CoreScene({
   spec,
@@ -58,14 +60,6 @@ export function CoreScene({
           gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }}
         >
           <FieldBackdrop count={stars} reducedMotion={reducedMotion} />
-          <CoreArtifact
-            spec={spec}
-            section={section}
-            velocity={velocity}
-            drag={drag}
-            reducedMotion={reducedMotion}
-            corePulse={corePulse}
-          />
           {spec.particles > 0 && (
             <NeuralField
               spec={spec}
@@ -74,6 +68,13 @@ export function CoreScene({
               velocity={velocity}
               reducedMotion={reducedMotion}
               corePulse={corePulse}
+              drag={drag}
+            />
+          )}
+          {spec.particles > 0 && (
+            <ExecutionVisualization
+              active={EXECUTION_SECTIONS.has(section)}
+              reducedMotion={reducedMotion}
             />
           )}
         </Canvas>

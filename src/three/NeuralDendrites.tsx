@@ -11,6 +11,7 @@ import { NEURAL_CONFIG } from '../config/neural'
  */
 export function NeuralDendrites({ sys }: { sys: NeuralSystem }) {
   const segments = useRef<THREE.LineSegments>(null)
+  const mat = useRef<THREE.LineBasicMaterial>(null)
   const perNode = NEURAL_CONFIG.dendrites.perNode
 
   const geo = useMemo(() => {
@@ -49,12 +50,15 @@ export function NeuralDendrites({ sys }: { sys: NeuralSystem }) {
       }
     }
     attr.needsUpdate = true
+    const m = mat.current
+    if (m) m.opacity = 0.42 * sys.dendOp
   })
 
   return (
     <lineSegments ref={segments} geometry={geo} frustumCulled={false}>
       <lineBasicMaterial
-        color={0x93a5cc}
+        ref={mat}
+        color={0xe8dcc4}
         transparent
         opacity={0.42}
         depthWrite={false}

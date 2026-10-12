@@ -47,12 +47,56 @@ export interface Messages {
     statusOpen: string
   }
   nav: {
+    mind: string
+    idea: string
+    transfer: string
+    ai: string
+    execution: string
     work: string
     experiments: string
     about: string
-    stack: string
-    journey: string
     contact: string
+  }
+  mind: {
+    aria: string
+    label: string
+    headline: readonly [string, string]
+    dragHint: string
+    explore: string
+    statProjects: string
+    statExperiments: string
+    statTechnologies: string
+  }
+  idea: {
+    aria: string
+    label: string
+    headline: readonly [string, string]
+    lead: string
+    steps: readonly { name: string; note: string }[]
+    footer: string
+  }
+  transfer: {
+    aria: string
+    label: string
+    headline: readonly [string, string]
+    sub: string
+    desc: string
+  }
+  ai: {
+    aria: string
+    label: string
+    headline: readonly [string, string]
+    desc: string
+    flow: readonly { name: string; note: string }[]
+    result: string
+  }
+  execution: {
+    aria: string
+    label: string
+    headline: readonly [string, string]
+    desc: string
+    flow: readonly { name: string; note: string }[]
+    result: string
   }
   hero: {
     aria: string

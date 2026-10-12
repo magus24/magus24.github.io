@@ -159,28 +159,32 @@ await page.waitForTimeout(800)
 report.expStageText = await page.textContent('.exp-stage .stage-desc')
 await page.screenshot({ path: path.join(shots, '07-experiments.png') })
 
-/* stack */
-await page.evaluate(() => document.getElementById('stack')?.scrollIntoView())
-await page.waitForTimeout(1300)
-report.stackNodes = await page.locator('.orbit-node').count()
-await page.screenshot({ path: path.join(shots, '08-stack.png') })
+/* story chapters */
+await page.evaluate(() => document.getElementById('idea')?.scrollIntoView())
+await page.waitForTimeout(1700)
+await page.screenshot({ path: path.join(shots, '08-idea.png') })
 
-/* journey */
-await page.evaluate(() => document.getElementById('journey')?.scrollIntoView())
-await page.waitForTimeout(1500)
-report.timelineEntries = await page.locator('.timeline-entry').count()
-await page.screenshot({ path: path.join(shots, '09-journey.png') })
+await page.evaluate(() => document.getElementById('transfer')?.scrollIntoView())
+await page.waitForTimeout(2200)
+await page.screenshot({ path: path.join(shots, '09-transfer.png') })
+
+await page.evaluate(() => document.getElementById('ai')?.scrollIntoView())
+await page.waitForTimeout(1900)
+await page.screenshot({ path: path.join(shots, '10-ai.png') })
+
+await page.evaluate(() => document.getElementById('execution')?.scrollIntoView())
+await page.waitForTimeout(1900)
+await page.screenshot({ path: path.join(shots, '11-execution.png') })
+
+/* about */
+await page.evaluate(() => document.getElementById('about')?.scrollIntoView())
+await page.waitForTimeout(1400)
+await page.screenshot({ path: path.join(shots, '12-about.png') })
 
 /* contact */
 await page.evaluate(() => document.getElementById('contact')?.scrollIntoView())
 await page.waitForTimeout(1400)
-await page.screenshot({ path: path.join(shots, '10-contact.png') })
-
-/* finale */
-await page.evaluate(() => document.getElementById('finale')?.scrollIntoView())
-await page.waitForTimeout(1400)
-report.finaleText = await page.textContent('.finale-title')
-await page.screenshot({ path: path.join(shots, '11-finale.png') })
+await page.screenshot({ path: path.join(shots, '13-contact.png') })
 
 /* full page */
 await page.evaluate(async () => {
@@ -192,7 +196,7 @@ await page.evaluate(async () => {
   window.scrollTo(0, 0)
 })
 await page.waitForTimeout(1700)
-await page.screenshot({ path: path.join(shots, '12-full.png'), fullPage: true })
+await page.screenshot({ path: path.join(shots, '14-full.png'), fullPage: true })
 
 /* ---------- laptop ---------- */
 const laptop = await browser.newContext({ viewport: { width: 1024, height: 700 } })
@@ -201,7 +205,7 @@ attach(lp)
 await lp.goto('http://localhost:4173/', { waitUntil: 'networkidle' })
 await lp.waitForTimeout(2600)
 report.overflow1024 = await overflow(lp)
-await lp.screenshot({ path: path.join(shots, '13-laptop.png') })
+await lp.screenshot({ path: path.join(shots, '15-laptop.png') })
 
 /* ---------- tablet ---------- */
 const tablet = await browser.newContext({ viewport: { width: 768, height: 1024 } })
@@ -210,7 +214,7 @@ attach(tp)
 await tp.goto('http://localhost:4173/', { waitUntil: 'networkidle' })
 await tp.waitForTimeout(2600)
 report.overflow768 = await overflow(tp)
-await tp.screenshot({ path: path.join(shots, '14-tablet.png') })
+await tp.screenshot({ path: path.join(shots, '16-tablet.png') })
 
 /* ---------- mobile ---------- */
 const mobile = await browser.newContext({
@@ -224,7 +228,7 @@ attach(mp)
 await mp.goto('http://localhost:4173/', { waitUntil: 'networkidle' })
 await mp.waitForTimeout(3000)
 report.overflow375 = await overflow(mp)
-await mp.screenshot({ path: path.join(shots, '15-mobile-hero.png') })
+await mp.screenshot({ path: path.join(shots, '17-mobile-hero.png') })
 
 report.langPopVisible = await mp.locator('.lang-switch--pop').isVisible()
 report.langInlineHidden = await mp.locator('.lang-switch--inline').isHidden()

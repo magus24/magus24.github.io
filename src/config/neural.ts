@@ -80,7 +80,7 @@ export const NEURAL_CONFIG: NeuralConfig = {
   signalSpeed: [0.8, 1.4],
   drift: 0.09,
   interactionTilt: 0.06,
-  nodeSize: 0.05,
+  nodeSize: 0.058,
   nodeActiveSize: 1.4,
   nodePulse: 0.16,
   dendrites: { perNode: 2, length: 0.2, ratio: 0.85 },
@@ -113,20 +113,27 @@ export function networkNodeCount(spec: Spec): number {
 }
 
 /**
- * Per-chapter feel of the field. The portfolio is a machine: at the hero
- * the net stays whisper-quiet so the typography reads; deeper chapters
- * "wake it up". `r` expands the envelope, `op/edgeOp` brighten it.
+ * Per-chapter feel of the field. The story runs HUMAN → AI: `phase` drives
+ * the morph between the organic human network (0) and the structured
+ * machine network (1). `r` expands the envelope, `op/edgeOp` brighten it,
+ * `sway` is the organic idle motion (fades out as the net regularizes).
  */
 export interface FieldState {
   r: number
   op: number
   edgeOp: number
+  phase: number
+  sway: number
 }
 
 export const FIELD_STATES: Record<string, FieldState> = {
-  seed: { r: 1.0, op: 0.58, edgeOp: 0.44 },
-  open: { r: 1.12, op: 0.78, edgeOp: 0.5 },
-  systems: { r: 1.2, op: 0.95, edgeOp: 0.62 },
-  network: { r: 1.32, op: 1.05, edgeOp: 0.8 },
-  reassemble: { r: 0.94, op: 1.0, edgeOp: 0.66 },
+  mind: { r: 1.0, op: 0.68, edgeOp: 0.5, phase: 0, sway: 1.0 },
+  idea: { r: 1.06, op: 0.88, edgeOp: 0.6, phase: 0.05, sway: 1.0 },
+  transfer: { r: 1.14, op: 1.0, edgeOp: 0.72, phase: 0.5, sway: 0.5 },
+  ai: { r: 1.2, op: 1.05, edgeOp: 0.9, phase: 1, sway: 0.05 },
+  execution: { r: 1.16, op: 1.06, edgeOp: 0.94, phase: 1, sway: 0 },
+  work: { r: 1.24, op: 1.0, edgeOp: 0.86, phase: 1, sway: 0 },
+  experiments: { r: 1.2, op: 0.98, edgeOp: 0.82, phase: 1, sway: 0 },
+  about: { r: 1.1, op: 0.9, edgeOp: 0.7, phase: 0.85, sway: 0.15 },
+  contact: { r: 0.98, op: 0.86, edgeOp: 0.66, phase: 0.6, sway: 0.3 },
 }

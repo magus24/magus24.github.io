@@ -10,22 +10,21 @@ import { CommandMenu } from './components/CommandMenu'
 import { Guide } from './components/Guide'
 import { CoreFallback } from './components/CoreFallback'
 import { CoreStatus } from './components/CoreStatus'
-import { CORE_STATES } from './data/navigation'
 import { useCapabilities, useScrollStory } from './hooks/useScrollStory'
 import { prefersReducedMotion } from './hooks/useMediaQuery'
 import { useI18n } from './i18n/provider'
 import { networkNodeCount } from './config/neural'
 import { cx } from './lib/utils'
 import type { Project } from './data/projects'
-import { Hero } from './sections/Hero'
-import { Ideas } from './sections/Ideas'
+import { Mind } from './sections/Mind'
+import { Idea } from './sections/Idea'
+import { Transfer } from './sections/Transfer'
+import { Ai } from './sections/Ai'
+import { Execution } from './sections/Execution'
 import { About } from './sections/About'
 import { Work } from './sections/Work'
 import { Experiments } from './sections/Experiments'
-import { Stack } from './sections/Stack'
-import { Journey } from './sections/Journey'
 import { Contact } from './sections/Contact'
-import { Finale } from './sections/Finale'
 
 const CoreScene = lazy(() =>
   import('./three/CoreScene').then((m) => ({ default: m.CoreScene })),
@@ -113,8 +112,6 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [overlays.command, setCommand, setGuide])
 
-  const coreState = CORE_STATES[story.section] ?? 'seed'
-
   return (
     <MotionConfig reducedMotion="user">
       <a className="skip-link" href="#work">
@@ -128,7 +125,7 @@ export default function App() {
         <Suspense fallback={null}>
           <CoreScene
             spec={spec}
-            section={coreState}
+            section={story.section}
             velocity={story.velocity}
             projectId={story.projectId}
             reducedMotion={reducedMotion}
@@ -146,15 +143,15 @@ export default function App() {
         <Navigation />
 
         <main>
-          <Hero />
-          <Ideas />
-          <About />
+          <Mind />
+          <Idea />
+          <Transfer />
+          <Ai />
+          <Execution />
           <Work onOpen={openProject} />
           <Experiments />
-          <Stack />
-          <Journey />
+          <About />
           <Contact />
-          <Finale />
         </main>
 
         <Footer />

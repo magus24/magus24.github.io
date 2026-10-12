@@ -31,6 +31,12 @@ export function SignalFlow({
     const op = Math.max(0.15, sys.op * 0.9)
     if (headMat.current) headMat.current.opacity = Math.min(1, op + 0.15)
     if (trailMat.current) trailMat.current.opacity = op * 0.32
+    // warm amber impulse (human) → electric blue (machine)
+    const m = sys.morph
+    if (headMat.current)
+      headMat.current.color.setRGB(1.0 + (0.66 - 1.0) * m, 0.83 + (0.77 - 0.83) * m, 0.6 + (1.0 - 0.6) * m)
+    if (trailMat.current)
+      trailMat.current.color.setRGB(1.0 + (0.62 - 1.0) * m, 0.7, 0.4 + (1.0 - 0.4) * m)
 
     const signals = sys.signals
     const pos = sys.positions

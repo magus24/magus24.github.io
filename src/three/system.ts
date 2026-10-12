@@ -31,8 +31,10 @@ export interface NeuralSystem {
   count: number
   /** current local field coordinates (updated by drift / themes) */
   positions: Float32Array
-  /** the untouched home coordinates generated at startup */
+  /** the untouched human-network home coordinates generated at startup */
   basePos: Float32Array
+  /** the machine-network home coordinates (structured compute layers) */
+  aiPos: Float32Array
   /** current distance from the core centre */
   radius: Float32Array
   /** start positions of per-node dendrite stubs (n * perNode * 3), zeroed where absent */
@@ -69,6 +71,10 @@ export interface NeuralSystem {
   /** mutable per-frame chapter brightness multipliers */
   op: number
   edgeOp: number
+  /** per-frame dendrite tuft opacity (fades out as the net regularizes) */
+  dendOp: number
+  /** per-frame morph weight 0 = organic human net, 1 = machine net */
+  morph: number
 }
 
 /* ------------------------------------------------------------------ *
@@ -222,6 +228,32 @@ export function createNeuralSystem(config: NeuralConfig, tier: NeuralTier): Neur
   }
 
   const clusters = regionDirs.map((d) => d.clone().multiplyScalar(k))
+
+  /* ------------------------------------------------------------------ *
+   * Machine-network layout. Each organic cluster becomes one compute    *
+   * layer; layers stack vertically (top = input, bottom = output) and   *
+   * nodes sit on two concentric rings so the AI field reads as a        *
+   * structured, directed system rather than a cloud. The morph between  *
+   * basePos (human) and aiPos is driven per-frame by NeuralField.       *
+   * ------------------------------------------------------------------ */
+  const aiPos = new Float32Array(n * 3)
+  const members: number[][] = Array.from({ length: C }, () => [])
+  for (let i = 0; i < n; i++) members[cluster[i]].push(i)
+  const layerSpacing = 0.78
+  for (let k = 0; k < C; k++) {
+    const arr = members[k]
+    const layerY = ((C - 1) / 2 - k) * layerSpacing
+    const ringScale = 0.78 + 0.5 * Math.sin((Math.PI * (k + 0.5)) / C)
+    for (let idx = 0; idx < arr.length; idx++) {
+      const node = arr[idx]
+      const ring = idx % 2 === 0 ? 0.44 : 0.82
+      const ang = idx * 2.399963 + k * 1.13
+      const r = ring * ringScale
+      aiPos[node * 3] = Math.cos(ang) * r + (rnd() - 0.5) * 0.05
+      aiPos[node * 3 + 1] = layerY + (rnd() - 0.5) * 0.07
+      aiPos[node * 3 + 2] = Math.sin(ang) * r + (rnd() - 0.5) * 0.05
+    }
+  }
 
   /* ---------- filaments ---------- */
   const edges: FieldEdge[] = []
@@ -379,6 +411,7 @@ export function createNeuralSystem(config: NeuralConfig, tier: NeuralTier): Neur
     count: n,
     positions,
     basePos,
+    aiPos,
     radius,
     dendDirs,
     cluster,
@@ -401,5 +434,7 @@ export function createNeuralSystem(config: NeuralConfig, tier: NeuralTier): Neur
     maxR: R,
     op: 0.5,
     edgeOp: 0.34,
+    dendOp: 1,
+    morph: 0,
   }
 }

@@ -4,15 +4,16 @@ import { useEffect, useMemo, useRef } from 'react'
 import type { RefObject } from 'react'
 import type { Spec } from '../hooks/useScrollStory'
 import { FIELD_STATES, NEURAL_CONFIG } from '../config/neural'
-import { CORE_TARGETS } from '../components/coreStates'
+import { DEFAULT_SCENE_TARGET, SCENE_TARGETS } from '../components/sceneStates'
 import { clamp01, dampValue } from './math'
 import { createNeuralSystem, type NeuralSystem } from './system'
 import { NeuralNodes } from './NeuralNodes'
 import { NeuralConnections } from './NeuralConnections'
 import { SignalFlow } from './SignalFlow'
 import { NeuralDendrites } from './NeuralDendrites'
+import { TransferPulse } from './TransferPulse'
 
-/** Shared event channel: NeuralField raises pulses, CoreArtifact reacts to them. */
+/** Shared event channel: NeuralField raises pulses, the scene reacts to them. */
 export interface CoreEvent {
   target: number
 }
@@ -24,15 +25,16 @@ export interface NeuralFieldProps {
   velocity: RefObject<number>
   reducedMotion: boolean
   corePulse: RefObject<CoreEvent>
+  drag?: { sx: number; sy: number }
 }
 
 interface FieldState {
   r: number
   op: number
   edgeOp: number
+  phase: number
   themeT: number
   hover: number
-  rotY: number
   nextBurst: number
   ripple: number
 }
@@ -43,6 +45,13 @@ const tmp = new THREE.Vector3()
 const tmp2 = new THREE.Vector3()
 const clusterOsc = new Float32Array(8)
 const MAX_GLOW = 1.6
+
+/** human network — warm white / silver / soft amber */
+const HUMAN_BASE = [1.0, 0.94, 0.82]
+const HUMAN_ACC = [1.0, 0.76, 0.42]
+/** machine network — cool white / electric blue */
+const AI_BASE = [0.7, 0.8, 1.0]
+const AI_ACC = [0.32, 0.52, 1.0]
 
 function projectThemePosition(theme: string, x: number, y: number, z: number, out: THREE.Vector3) {
   if (theme === 'yotoqhonam') {
@@ -73,6 +82,7 @@ export function NeuralField({
   velocity,
   reducedMotion,
   corePulse,
+  drag,
 }: NeuralFieldProps) {
   const group = useRef<THREE.Group>(null)
   const sys = useMemo(() => createFieldSystem(spec), [spec])
@@ -84,12 +94,12 @@ export function NeuralField({
   const pointer = useMemo(() => ({ x: 0, y: 0 }), [])
   const lastT = useRef(0)
   const s = useRef<FieldState>({
-    r: FIELD_STATES.seed.r,
-    op: FIELD_STATES.seed.op,
-    edgeOp: FIELD_STATES.seed.edgeOp,
+    r: FIELD_STATES.mind.r,
+    op: FIELD_STATES.mind.op,
+    edgeOp: FIELD_STATES.mind.edgeOp,
+    phase: FIELD_STATES.mind.phase,
     themeT: 0,
     hover: 0,
-    rotY: 0,
     nextBurst: 7 + Math.random() * 4,
     ripple: -1,
   })
@@ -109,90 +119,100 @@ export function NeuralField({
     lastT.current = t
 
     const st = s.current
-    const chapter = FIELD_STATES[section] ?? FIELD_STATES.seed
-    const core = CORE_TARGETS[section] ?? CORE_TARGETS.seed
+    const chapter = FIELD_STATES[section] ?? FIELD_STATES.mind
+    const scene = SCENE_TARGETS[section] ?? DEFAULT_SCENE_TARGET
     const cfg = NEURAL_CONFIG
 
-    const damp = (key: 'r' | 'op' | 'edgeOp' | 'themeT' | 'hover', target: number) =>
+    const damp = (key: 'r' | 'op' | 'edgeOp' | 'phase' | 'themeT' | 'hover', target: number) =>
       (st[key] = dampValue(st[key], target, 3, dt))
 
     damp('r', chapter.r)
     damp('op', chapter.op)
     damp('edgeOp', chapter.edgeOp)
+    damp('phase', chapter.phase)
     const pid = projectId.current
     const theme = pid === 'yotoqhonam' || pid === 'antifake' || pid === 'shieldx' ? pid : null
     damp('themeT', theme ? 1 : 0)
     damp('hover', Math.abs(pointer.x) < 0.22 && Math.abs(pointer.y) < 0.22 ? 1 : 0)
 
+    const ph = st.phase
     const breath =
       reducedMotion || spec.particles <= 0
         ? 1
-        : 1 + cfg.breathing.amp * Math.sin((t / cfg.breathing.period) * Math.PI * 2)
+        : 1 + cfg.breathing.amp * Math.sin((t / cfg.breathing.period) * Math.PI * 2) * (1 - ph * 0.7)
 
-    /* field group transform — anchored to the same locus as the core */
+    /* field group transform — a slow camera-like travel down the story */
     const groupObj = group.current
     if (groupObj) {
       const aspect = size.width / Math.max(size.height, 1)
       const fov = camera instanceof THREE.PerspectiveCamera ? camera.fov : 34
       const halfH = Math.tan((fov * Math.PI) / 360) * 4.6
-      groupObj.position.x = dampValue(groupObj.position.x, core.x * halfH * aspect, 3, dt)
-      groupObj.position.y = dampValue(groupObj.position.y, core.yk * halfH, 3, dt)
-      groupObj.position.z = dampValue(groupObj.position.z, core.z, 3, dt)
-      groupObj.scale.setScalar(core.scale * st.r * breath)
+      groupObj.position.x = dampValue(groupObj.position.x, scene.x * halfH * aspect, 3, dt)
+      groupObj.position.y = dampValue(groupObj.position.y, scene.yk * halfH, 3, dt)
+      groupObj.position.z = dampValue(groupObj.position.z, scene.z, 3, dt)
+      groupObj.scale.setScalar(scene.scale * st.r * breath)
 
       if (reducedMotion) {
         groupObj.rotation.set(0, 0, 0)
       } else {
+        // the machine net stands still; the human net drifts and follows the cursor
+        const life = 1 - ph * 0.85
+        const dx = drag ? drag.sx : 0
+        const dy = drag ? drag.sy : 0
         groupObj.rotation.y =
-          -t * 0.03 + pointer.x * cfg.interactionTilt * 0.6 * (0.35 + st.hover)
+          -t * 0.03 * life + dx + pointer.x * cfg.interactionTilt * 0.6 * (0.35 + st.hover)
         groupObj.rotation.x =
-          Math.sin(t * 0.05) * 0.022 + pointer.y * cfg.interactionTilt * 0.5 * (0.35 + st.hover)
-        groupObj.rotation.z = -pointer.x * cfg.interactionTilt * 0.4
+          Math.sin(t * 0.05) * 0.022 * life +
+          dy * 0.7 +
+          pointer.y * cfg.interactionTilt * 0.5 * (0.35 + st.hover)
+        groupObj.rotation.z = -pointer.x * cfg.interactionTilt * 0.4 * life
       }
       groupObj.updateMatrixWorld(true)
     }
     const mw = groupObj ? groupObj.matrixWorld : IDENTITY
 
-    /* node positions: base + cluster sway + slow breath + project theme blend */
+    /* node positions: organic human home + sway + theme, morphed toward the
+       structured machine layout by `phase` */
     const positions = sys.positions
     const base = sys.basePos
-    const oscAmp = reducedMotion ? 0 : 0.035
+    const aiP = sys.aiPos
+    const sway = reducedMotion ? 0 : (chapter.sway ?? 1)
+    const oscAmp = 0.035 * sway
     const driftPhase = reducedMotion ? 0 : t * 0.09
     for (let k = 0; k < Math.min(sys.clusters.length, clusterOsc.length); k++) {
       clusterOsc[k] = 1 + oscAmp * Math.sin(driftPhase + k * 2.1)
-      if (!reducedMotion) {
-        swQ[k].setFromAxisAngle(swAxis[k], 0.03 * Math.sin(t * 0.07 + k * 1.7))
+      if (!reducedMotion && sway > 0.001) {
+        swQ[k].setFromAxisAngle(swAxis[k], 0.03 * sway * Math.sin(t * 0.07 + k * 1.7))
       } else {
         swQ[k].identity()
       }
     }
+    const themeBlend = st.themeT > 0.001 && theme ? st.themeT * 0.55 : 0
+    const inv = 1 - ph
     for (let i = 0; i < sys.count; i++) {
       const c = sys.cluster[i]
       const o = clusterOsc[c]
       tmp2.set(base[i * 3] * o, base[i * 3 + 1] * o, base[i * 3 + 2] * o).applyQuaternion(swQ[c])
-      positions[i * 3] = tmp2.x
-      positions[i * 3 + 1] = tmp2.y
-      positions[i * 3 + 2] = tmp2.z
-    }
-    if (st.themeT > 0.001 && theme) {
-      const blend = st.themeT * 0.55
-      for (let i = 0; i < sys.count; i++) {
-        projectThemePosition(theme, base[i * 3], base[i * 3 + 1], base[i * 3 + 2], tmp2)
-        positions[i * 3] += (tmp2.x - positions[i * 3]) * blend
-        positions[i * 3 + 1] += (tmp2.y - positions[i * 3 + 1]) * blend
-        positions[i * 3 + 2] += (tmp2.z - positions[i * 3 + 2]) * blend
+      if (themeBlend > 0 && theme) {
+        projectThemePosition(theme, base[i * 3], base[i * 3 + 1], base[i * 3 + 2], tmp)
+        tmp2.x += (tmp.x - tmp2.x) * themeBlend
+        tmp2.y += (tmp.y - tmp2.y) * themeBlend
+        tmp2.z += (tmp.z - tmp2.z) * themeBlend
       }
-    }
-    for (let i = 0; i < sys.count; i++) {
+      positions[i * 3] = tmp2.x * inv + aiP[i * 3] * ph
+      positions[i * 3 + 1] = tmp2.y * inv + aiP[i * 3 + 1] * ph
+      positions[i * 3 + 2] = tmp2.z * inv + aiP[i * 3 + 2] * ph
       const px = positions[i * 3]
       const py = positions[i * 3 + 1]
       const pz = positions[i * 3 + 2]
       sys.radius[i] = Math.sqrt(px * px + py * py + pz * pz)
     }
 
-    /* node colours + sizes (depth-cued) */
+    /* node colours + sizes (depth-cued, warm → cool with the morph) */
     sys.op = st.op
     sys.edgeOp = st.edgeOp
+    sys.dendOp = clamp01(1 - ph * 1.35)
+    sys.morph = ph
     const glow = sys.glow
     const nodeSizeArr = sys.nodeSizeArr
     const nodeCol = sys.nodeColorArr
@@ -216,15 +236,20 @@ export function NeuralField({
         sys.scale[i] *
         (1.35 - d * 0.55) *
         (1 + g * 0.3) *
+        (1 + ph * 0.25) *
         (1 + (sys.accent[i] ? cfg.nodeActiveSize - 1 : 0) * 0.4)
 
-      const cr = (0.92 - d * 0.38) * bright
-      const cg = (0.94 - d * 0.38) * bright
-      const cb = (0.98 - d * 0.34) * bright
+      // base tone: warm silver (human) → cool white (machine)
+      const baseR = (HUMAN_BASE[0] + (AI_BASE[0] - HUMAN_BASE[0]) * ph) * (1 - d * 0.38) * bright
+      const baseG = (HUMAN_BASE[1] + (AI_BASE[1] - HUMAN_BASE[1]) * ph) * (1 - d * 0.38) * bright
+      const baseB = (HUMAN_BASE[2] + (AI_BASE[2] - HUMAN_BASE[2]) * ph) * (1 - d * 0.34) * bright
+      const accR = HUMAN_ACC[0] + (AI_ACC[0] - HUMAN_ACC[0]) * ph
+      const accG = HUMAN_ACC[1] + (AI_ACC[1] - HUMAN_ACC[1]) * ph
+      const accB = HUMAN_ACC[2] + (AI_ACC[2] - HUMAN_ACC[2]) * ph
       const accTb = Math.min(accT, 1)
-      nodeCol[i * 3] = cr + (0.32 - cr) * accTb
-      nodeCol[i * 3 + 1] = cg + (0.5 - cg) * accTb
-      nodeCol[i * 3 + 2] = cb + (1 - cb) * accTb
+      nodeCol[i * 3] = baseR + (accR * bright - baseR) * accTb
+      nodeCol[i * 3 + 1] = baseG + (accG * bright - baseG) * accTb
+      nodeCol[i * 3 + 2] = baseB + (accB * bright - baseB) * accTb
     }
 
     /* signals, bursts, ripples, idle life */
@@ -309,7 +334,9 @@ export function NeuralField({
           sig.speed = (cfg.signalSpeed[0] + cfg.signalSpeed[1]) * 0.75
           taken++
         }
-        if (taken > 1) st.ripple = 0.18
+        if (taken > 1) {
+          st.ripple = 0.18
+        }
       }
 
       /* decay */
@@ -319,12 +346,15 @@ export function NeuralField({
     }
   })
 
+  const transferring = section === 'transfer' || section === 'ai'
+
   return (
     <group ref={group}>
       <NeuralDendrites sys={sys} />
       <NeuralNodes sys={sys} />
       <NeuralConnections sys={sys} />
       <SignalFlow sys={sys} size={NEURAL_CONFIG.signalSize} />
+      {!reducedMotion && <TransferPulse active={transferring} />}
     </group>
   )
 }
