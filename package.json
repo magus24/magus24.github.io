@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "homepage": "https://magus24.github.io/portfolio/",
+  "homepage": "https://magus24.github.io/",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

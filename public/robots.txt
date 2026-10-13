@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://magus24.github.io/portfolio/sitemap.xml
+Sitemap: https://magus24.github.io/sitemap.xml
