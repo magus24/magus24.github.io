@@ -9,7 +9,7 @@ import { dampValue } from './math'
 import { createNeuralSystem, type NeuralSystem } from './system'
 import { TransferPulse } from './TransferPulse'
 import { BrainCortex } from './BrainCortex'
-import { QuantumAICore } from './QuantumAICore'
+import { NeuralCyberEffects } from './NeuralCyberEffects'
 
 /** Shared event channel: NeuralField raises pulses, the scene reacts to them. */
 export interface CoreEvent {
@@ -150,7 +150,7 @@ export function NeuralField({
   return (
     <group ref={group}>
       <BrainCortex sys={sys} morph={s.current.phase} opacity={s.current.op} />
-      <QuantumAICore
+      <NeuralCyberEffects
         morph={s.current.phase}
         opacity={s.current.op}
         velocity={velocity}
