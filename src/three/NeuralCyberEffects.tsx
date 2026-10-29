@@ -16,6 +16,37 @@ interface NeuralCyberEffectsProps {
 const WAVE_COUNT = 3
 const WAVE_PERIOD = 3.2
 
+const LOBE_DEFS = [
+  {
+    anchor: [0.42, 0.32, 0.65] as const,
+    offset: [0.72, 0.48, 0.85] as const,
+    title: 'FRONTAL LOBE',
+    sub: 'EXECUTIVE AI // AGENTS',
+    color: '#38bdf8',
+  },
+  {
+    anchor: [0.35, 0.62, 0.12] as const,
+    offset: [0.65, 0.88, 0.22] as const,
+    title: 'PARIETAL LOBE',
+    sub: '3D SPATIAL // WEBGL',
+    color: '#00f0ff',
+  },
+  {
+    anchor: [0.32, 0.18, -0.68] as const,
+    offset: [0.62, 0.32, -0.88] as const,
+    title: 'OCCIPITAL LOBE',
+    sub: 'COMPUTER VISION // YOLO',
+    color: '#fde68a',
+  },
+  {
+    anchor: [0.75, -0.15, 0.12] as const,
+    offset: [1.08, -0.22, 0.22] as const,
+    title: 'TEMPORAL LOBE',
+    sub: 'SPEECH AI // OSINT',
+    color: '#f43f5e',
+  },
+]
+
 export function NeuralCyberEffects({
   morph,
   opacity,
@@ -32,6 +63,8 @@ export function NeuralCyberEffects({
   const beamLinesRef = useRef<THREE.LineSegments>(null)
   const beamPhotonsRef = useRef<THREE.Points>(null)
   const waveMeshes = useRef<(THREE.Mesh | null)[]>([])
+  const lobeLinesRef = useRef<THREE.LineSegments>(null)
+  const lobeSpritesRef = useRef<(THREE.Sprite | null)[]>([])
 
   // 1. Synaptic Stardust (ambient thought particles drifting around the brain)
   const stardustGeo = useMemo(() => {
@@ -123,6 +156,62 @@ export function NeuralCyberEffects({
     return { photonGeo: geo, photonSpeeds: speeds }
   }, [])
 
+  // 4. Lobe connector lines
+  const lobeLinesGeo = useMemo(() => {
+    const pos = new Float32Array(LOBE_DEFS.length * 2 * 3)
+    LOBE_DEFS.forEach((l, i) => {
+      const idx = i * 6
+      pos[idx] = l.anchor[0]
+      pos[idx + 1] = l.anchor[1]
+      pos[idx + 2] = l.anchor[2]
+
+      pos[idx + 3] = l.offset[0]
+      pos[idx + 4] = l.offset[1]
+      pos[idx + 5] = l.offset[2]
+    })
+    const geo = new THREE.BufferGeometry()
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
+    return geo
+  }, [])
+
+  // 5. Billboard sprite textures for each lobe
+  const lobeTextures = useMemo(() => {
+    if (typeof document === 'undefined') return []
+    return LOBE_DEFS.map((l) => {
+      const canvas = document.createElement('canvas')
+      canvas.width = 320
+      canvas.height = 80
+      const ctx = canvas.getContext('2d')
+      if (ctx) {
+        ctx.clearRect(0, 0, 320, 80)
+        ctx.fillStyle = 'rgba(8, 10, 16, 0.88)'
+        ctx.strokeStyle = l.color
+        ctx.lineWidth = 2
+        ctx.beginPath()
+        ctx.roundRect(4, 4, 312, 72, 8)
+        ctx.fill()
+        ctx.stroke()
+
+        ctx.fillStyle = l.color
+        ctx.beginPath()
+        ctx.arc(24, 40, 6, 0, Math.PI * 2)
+        ctx.fill()
+
+        ctx.fillStyle = '#ffffff'
+        ctx.font = 'bold 18px monospace'
+        ctx.fillText(l.title, 42, 34)
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'
+        ctx.font = '13px monospace'
+        ctx.fillText(l.sub, 42, 58)
+      }
+      const tex = new THREE.CanvasTexture(canvas)
+      tex.minFilter = THREE.LinearFilter
+      tex.magFilter = THREE.LinearFilter
+      return tex
+    })
+  }, [])
+
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime()
     const speedBoost = 1 + (velocity?.current ?? 0) * 0.8
@@ -201,6 +290,19 @@ export function NeuralCyberEffects({
       const bpMat = beamPhotonsRef.current.material as THREE.PointsMaterial
       bpMat.opacity = beamActive * opacity * 0.5
     }
+
+    // 5. Lobe holographic callout labels
+    const lobeAlpha = Math.max(0, 1.0 - morph * 1.8) * (0.35 + mouseSpeed * 0.35 + clickPulse * 0.25) * opacity
+    if (lobeLinesRef.current) {
+      const mat = lobeLinesRef.current.material as THREE.LineBasicMaterial
+      mat.opacity = lobeAlpha * 0.4
+    }
+    lobeSpritesRef.current.forEach((sp) => {
+      if (sp) {
+        const mat = sp.material as THREE.SpriteMaterial
+        mat.opacity = lobeAlpha * 0.85
+      }
+    })
   })
 
   return (
@@ -286,6 +388,43 @@ export function NeuralCyberEffects({
           opacity={0.6}
         />
       </points>
+
+      {/* 5. Holographic Lobe Callouts */}
+      <lineSegments ref={lobeLinesRef} geometry={lobeLinesGeo} frustumCulled={false}>
+        <lineBasicMaterial
+          color="#00f0ff"
+          transparent
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          opacity={0.25}
+        />
+      </lineSegments>
+
+      {LOBE_DEFS.map((l, i) => (
+        <group key={l.title}>
+          <mesh position={l.anchor}>
+            <sphereGeometry args={[0.02, 12, 12]} />
+            <meshBasicMaterial color={l.color} />
+          </mesh>
+
+          {lobeTextures[i] && (
+            <sprite
+              ref={(el) => {
+                lobeSpritesRef.current[i] = el
+              }}
+              position={l.offset}
+              scale={[0.42, 0.105, 1]}
+            >
+              <spriteMaterial
+                map={lobeTextures[i]}
+                transparent
+                depthWrite={false}
+                opacity={0.6}
+              />
+            </sprite>
+          )}
+        </group>
+      ))}
     </group>
   )
 }
