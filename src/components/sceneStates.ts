@@ -13,12 +13,12 @@ export interface SceneTarget {
 }
 
 export const SCENE_TARGETS: Record<string, SceneTarget> = {
-  mind: { x: 0.62, yk: 0.1, z: 0, scale: 0.9 },
-  idea: { x: 0.56, yk: -0.02, z: 0.05, scale: 0.98 },
-  transfer: { x: 0.16, yk: 0.04, z: 0.2, scale: 1.0 },
-  ai: { x: 0, yk: -0.02, z: 0.35, scale: 0.94 },
-  execution: { x: 0.02, yk: 0.08, z: 0.3, scale: 0.94 },
-  work: { x: 0.3, yk: 0.0, z: 0.12, scale: 1.0 },
+  mind: { x: 0.30, yk: 0.08, z: 0, scale: 1.02 },
+  idea: { x: 0.24, yk: -0.02, z: 0.05, scale: 1.05 },
+  transfer: { x: 0.08, yk: 0.04, z: 0.18, scale: 1.0 },
+  ai: { x: 0.0, yk: -0.02, z: 0.32, scale: 0.96 },
+  execution: { x: 0.02, yk: 0.06, z: 0.28, scale: 0.96 },
+  work: { x: 0.28, yk: 0.0, z: 0.12, scale: 1.0 },
   experiments: { x: 0.0, yk: 0.0, z: 0.0, scale: 0.98 },
   about: { x: -0.34, yk: 0.0, z: 0.0, scale: 1.0 },
   contact: { x: 0.0, yk: 0.0, z: 0.0, scale: 1.02 },
