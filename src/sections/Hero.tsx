@@ -3,6 +3,7 @@ import { ArrowDown } from 'lucide-react'
 import { PROFILE } from '../data/profile'
 import { STATS } from '../data/metrics'
 import { LineReveal, Reveal } from '../components/Primitives'
+import { sound } from '../lib/audio'
 import { useI18n } from '../i18n/provider'
 
 const EASE = [0.22, 1, 0.36, 1] as const
@@ -27,7 +28,12 @@ export function Hero() {
         <div className="hero-roles" aria-label="Disciplines">
           {PROFILE.roles.map((role, i) => (
             <Reveal key={role} delay={0.25 + i * 0.12}>
-              <a className="hero-role" href="#about">
+              <a
+                className="hero-role"
+                href="#about"
+                onPointerEnter={() => sound.playHover()}
+                onClick={() => sound.playClick()}
+              >
                 <span className="num">0{i + 1}</span>
                 {role}
               </a>
@@ -74,6 +80,8 @@ export function Hero() {
           className="hero-go"
           href="#work"
           data-cursor="go"
+          onPointerEnter={() => sound.playHover()}
+          onClick={() => sound.playClick()}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.7, delay: 1.2, ease: EASE }}

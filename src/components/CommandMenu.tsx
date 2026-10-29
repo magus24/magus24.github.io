@@ -3,6 +3,7 @@ import { ArrowUpRight, CornerDownLeft, Globe } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { PROFILE } from '../data/profile'
 import { PROJECTS } from '../data/projects'
+import { sound } from '../lib/audio'
 import { prefersReducedMotion } from '../hooks/useMediaQuery'
 import { useLocalizedContent } from '../i18n/content'
 import { useI18n } from '../i18n/provider'
@@ -133,14 +134,17 @@ export function CommandMenu({ open, onClose }: CommandMenuProps) {
               }
               if (event.key === 'ArrowDown') {
                 event.preventDefault()
+                sound.playHover()
                 setIndex((i) => (i + 1) % Math.max(filtered.length, 1))
               }
               if (event.key === 'ArrowUp') {
                 event.preventDefault()
+                sound.playHover()
                 setIndex((i) => (i - 1 + Math.max(filtered.length, 1)) % Math.max(filtered.length, 1))
               }
               if (event.key === 'Enter' && filtered[index]) {
                 event.preventDefault()
+                sound.playClick()
                 run(filtered[index])
               }
             }}
@@ -181,8 +185,14 @@ export function CommandMenu({ open, onClose }: CommandMenuProps) {
                     role="option"
                     aria-selected={i === index}
                     data-index={i}
-                    onMouseEnter={() => setIndex(i)}
-                    onClick={() => run(action)}
+                    onMouseEnter={() => {
+                      sound.playHover()
+                      setIndex(i)
+                    }}
+                    onClick={() => {
+                      sound.playClick()
+                      run(action)
+                    }}
                   >
                     <span className="idx">{String(i + 1).padStart(2, '0')}</span>
                     <span className="name">{action.name}</span>

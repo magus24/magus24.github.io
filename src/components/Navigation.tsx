@@ -62,7 +62,10 @@ function LanguageSwitch() {
             className={cx(lang === meta.code && 'is-active')}
             aria-pressed={lang === meta.code}
             aria-label={meta.full}
-            onClick={() => setLang(meta.code)}
+            onClick={() => {
+              sound.playClick()
+              setLang(meta.code)
+            }}
           >
             {meta.label}
           </button>
@@ -93,6 +96,7 @@ function LanguageSwitch() {
                 aria-checked={lang === meta.code}
                 className={cx(lang === meta.code && 'is-active')}
                 onClick={() => {
+                  sound.playClick()
                   setLang(meta.code)
                   setOpen(false)
                 }}
@@ -303,8 +307,10 @@ export function Navigation() {
                     <a
                       className="menu-link"
                       href={`#${item.target}`}
+                      onPointerEnter={() => sound.playHover()}
                       onClick={(event) => {
                         event.preventDefault()
+                        sound.playClick()
                         goTo(item.target)
                         close()
                       }}

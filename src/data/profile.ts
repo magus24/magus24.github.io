@@ -29,9 +29,9 @@ export const PROFILE: Profile = {
   timezone: 'UTC+5',
   disciplines: ['Software Engineering', 'AI', 'Cybersecurity'],
   availability: ['Projects', 'Research', 'Collaboration'],
-  email: 'you@example.com',
-  github: 'https://github.com/your-username',
-  telegram: 'https://t.me/your_handle',
-  linkedin: 'https://linkedin.com/in/your-handle',
+  email: 'magus24.dev@gmail.com',
+  github: 'https://github.com/magus24',
+  telegram: 'https://t.me/magus24',
+  linkedin: 'https://linkedin.com/in/magus24',
   year: 2026,
 }

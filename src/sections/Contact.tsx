@@ -1,10 +1,22 @@
-import { ArrowUpRight } from 'lucide-react'
+import { useState } from 'react'
+import { ArrowUpRight, Check, Copy } from 'lucide-react'
 import { PROFILE } from '../data/profile'
 import { SectionLabel, Reveal, LineReveal } from '../components/Primitives'
+import { sound } from '../lib/audio'
 import { useI18n } from '../i18n/provider'
 
 export function Contact() {
   const { t, messages } = useI18n()
+  const [copied, setCopied] = useState(false)
+
+  const copyEmail = (e: React.MouseEvent) => {
+    e.preventDefault()
+    navigator.clipboard.writeText(PROFILE.email).then(() => {
+      sound.playConfirm()
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
 
   const channels = [
     { label: 'GitHub', value: PROFILE.github, href: PROFILE.github },
@@ -33,8 +45,29 @@ export function Contact() {
         </div>
 
         <div>
-          <div className="mono" style={{ marginBottom: 10 }}>
-            {t('contact.channels')}
+          <div className="mono" style={{ marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span>{t('contact.channels')}</span>
+            <button
+              type="button"
+              onClick={copyEmail}
+              className="mono"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: copied ? '#4ade80' : 'var(--muted)',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                fontSize: 10,
+                padding: '2px 6px',
+                borderRadius: 3,
+                transition: 'color 0.2s',
+              }}
+            >
+              {copied ? <Check size={11} /> : <Copy size={11} />}
+              <span>{copied ? 'EMAIL COPIED' : 'COPY EMAIL'}</span>
+            </button>
           </div>
           {channels.map((channel, i) => (
             <Reveal key={channel.label} delay={0.08 * i} y={18}>
@@ -44,6 +77,8 @@ export function Contact() {
                 target={channel.href.startsWith('mailto:') ? undefined : '_blank'}
                 rel="noreferrer"
                 data-cursor="open"
+                onPointerEnter={() => sound.playHover()}
+                onClick={() => sound.playClick()}
               >
                 <span className="mono">0{i + 1}</span>
                 {channel.label}
