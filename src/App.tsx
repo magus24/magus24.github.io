@@ -149,7 +149,7 @@ export default function App() {
           <Ai />
           <Execution />
           <Work onOpen={openProject} />
-          <Experiments />
+          <Experiments onOpen={openProject} />
           <About />
           <Contact />
         </main>

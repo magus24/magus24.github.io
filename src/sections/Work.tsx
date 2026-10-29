@@ -1,5 +1,5 @@
-import { motion, useScroll, useTransform } from 'framer-motion'
-import { ArrowUpRight, ExternalLink, Search } from 'lucide-react'
+import { AnimatePresence, motion, useScroll, useTransform } from 'framer-motion'
+import { ArrowUpRight, Check, Copy, ExternalLink, Search } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import type { Project, ProjectCategory } from '../data/projects'
 import { cx } from '../lib/utils'
@@ -122,9 +122,28 @@ interface RepoCardProps {
 
 function RepoCard({ project, onOpen }: RepoCardProps) {
   const { t } = useI18n()
+  const [copied, setCopied] = useState(false)
+
+  const copyClone = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!project.github) return
+    const cmd = `git clone ${project.github}.git`
+    navigator.clipboard.writeText(cmd).then(() => {
+      sound.playConfirm()
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    })
+  }
 
   return (
-    <div className="repo-card">
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      className="repo-card"
+    >
       <div>
         <div className="repo-card-head">
           <span className="repo-card-index mono">#{project.index}</span>
@@ -170,29 +189,56 @@ function RepoCard({ project, onOpen }: RepoCardProps) {
             {t('projects.openCase')}
           </button>
 
-          {project.github && (
-            <a
-              href={project.github}
-              target="_blank"
-              rel="noreferrer"
-              className="mono"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                fontSize: 11,
-                color: '#38bdf8',
-                textDecoration: 'none',
-              }}
-            >
-              <GithubIcon size={13} />
-              <span>SOURCE</span>
-              <ExternalLink size={10} />
-            </a>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {project.github && (
+              <button
+                type="button"
+                onClick={copyClone}
+                className="mono"
+                title="Copy git clone"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: copied ? '#4ade80' : 'var(--muted)',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  fontSize: 10,
+                  padding: '3px 6px',
+                  borderRadius: 3,
+                  transition: 'color 0.2s',
+                }}
+              >
+                {copied ? <Check size={11} /> : <Copy size={11} />}
+                <span>{copied ? 'COPIED' : 'CLONE'}</span>
+              </button>
+            )}
+
+            {project.github && (
+              <a
+                href={project.github}
+                target="_blank"
+                rel="noreferrer"
+                className="mono"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontSize: 11,
+                  color: '#38bdf8',
+                  textDecoration: 'none',
+                }}
+              >
+                <GithubIcon size={13} />
+                <span>SOURCE</span>
+                <ExternalLink size={10} />
+              </a>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
 
@@ -311,9 +357,11 @@ export function Work({ onOpen }: WorkProps) {
         </div>
 
         <div className="repo-matrix">
-          {filteredProjects.map((project) => (
-            <RepoCard key={project.id} project={project} onOpen={onOpen} />
-          ))}
+          <AnimatePresence mode="popLayout">
+            {filteredProjects.map((project) => (
+              <RepoCard key={project.id} project={project} onOpen={onOpen} />
+            ))}
+          </AnimatePresence>
         </div>
       </div>
 
