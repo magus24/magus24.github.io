@@ -1,8 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowUpRight, ChevronDown, Globe, X } from 'lucide-react'
+import { ArrowUpRight, ChevronDown, Globe, Volume2, VolumeX, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { PROFILE } from '../data/profile'
 import { cx } from '../lib/utils'
+import { sound } from '../lib/audio'
 import { prefersReducedMotion } from '../hooks/useMediaQuery'
 import { LANGS } from '../i18n'
 import { useLocalizedContent } from '../i18n/content'
@@ -107,6 +108,42 @@ function LanguageSwitch() {
   )
 }
 
+function AudioToggle() {
+  const [active, setActive] = useState(() => sound.isEnabled())
+
+  const onToggle = () => {
+    const next = sound.toggle()
+    setActive(next)
+  }
+
+  return (
+    <button
+      type="button"
+      className={cx('audio-toggle mono', active && 'is-active')}
+      onClick={onToggle}
+      title={active ? 'Mute procedural cyber audio' : 'Enable procedural cyber audio'}
+      aria-label="Toggle procedural cyber audio"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '5px 10px',
+        borderRadius: 100,
+        background: active ? 'rgba(0, 240, 255, 0.1)' : 'rgba(255, 255, 255, 0.04)',
+        border: active ? '1px solid rgba(0, 240, 255, 0.4)' : '1px solid var(--line)',
+        color: active ? '#00f0ff' : 'var(--muted)',
+        fontSize: 10,
+        letterSpacing: '0.12em',
+        cursor: 'pointer',
+        transition: 'all 0.3s ease',
+      }}
+    >
+      {active ? <Volume2 size={12} /> : <VolumeX size={12} style={{ opacity: 0.6 }} />}
+      <span>{active ? 'SND: ON' : 'SND: OFF'}</span>
+    </button>
+  )
+}
+
 export function Navigation() {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -196,6 +233,7 @@ export function Navigation() {
         </span>
 
         <div className="header-actions">
+          <AudioToggle />
           <LanguageSwitch />
           <a
             className="header-email line-link"

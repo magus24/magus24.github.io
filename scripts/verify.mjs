@@ -143,6 +143,10 @@ await page.evaluate(() => document.getElementById('work')?.scrollIntoView())
 await page.waitForTimeout(1600)
 await page.screenshot({ path: path.join(shots, '05-work.png') })
 
+await page.evaluate(() => document.querySelector('.repo-matrix')?.scrollIntoView())
+await page.waitForTimeout(800)
+await page.screenshot({ path: path.join(shots, '05b-matrix.png') })
+
 /* open case study */
 await page.click('.project-row .bracket-link >> nth=0')
 await page.waitForTimeout(1400)

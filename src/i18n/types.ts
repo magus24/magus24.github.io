@@ -150,11 +150,7 @@ export interface Messages {
     fieldSolution: string
     fieldResult: string
     technologyAria: string
-    content: {
-      yotoqhonam: ProjectLocalContent
-      antifake: ProjectLocalContent
-      shieldx: ProjectLocalContent
-    }
+    content: Record<string, ProjectLocalContent>
   }
   experiments: {
     aria: string

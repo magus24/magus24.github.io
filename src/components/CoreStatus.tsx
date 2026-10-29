@@ -21,7 +21,10 @@ export function CoreStatus({ nodes }: CoreStatusProps) {
       <span className="cs-cell">
         {t('status.nodes')} <b>{String(nodes).padStart(2, '0')}</b>
       </span>
-      <span className="cs-cell">{t('status.signalActive')}</span>
+      <span className="cs-cell">
+        {t('status.signalActive')}
+      </span>
+      <span className="cs-cell">REPOSITORIES <b>19</b></span>
       <span className="cs-cell">{t('status.systemReady')}</span>
     </div>
   )

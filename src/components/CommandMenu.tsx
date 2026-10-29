@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowUpRight, CornerDownLeft, Globe } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { PROFILE } from '../data/profile'
+import { PROJECTS } from '../data/projects'
 import { prefersReducedMotion } from '../hooks/useMediaQuery'
 import { useLocalizedContent } from '../i18n/content'
 import { useI18n } from '../i18n/provider'
@@ -50,6 +51,15 @@ export function CommandMenu({ open, onClose }: CommandMenuProps) {
         group: messages.command.groupSections,
         name: item.label.toLowerCase(),
         run: () => goTo(item.target),
+      })),
+      ...PROJECTS.map((p) => ({
+        id: `p-${p.id}`,
+        group: 'REPOSITORIES',
+        name: `${p.title.toLowerCase()} · ${p.tags.slice(0, 2).join(' ')}`,
+        run: () => {
+          if (p.github) window.open(p.github, '_blank', 'noopener')
+          else goTo('work')
+        },
       })),
       { id: 'gh', group: messages.command.groupContact, name: PROFILE.github, run: () => window.open(PROFILE.github, '_blank', 'noopener') },
       { id: 'tg', group: messages.command.groupContact, name: `telegram · ${PROFILE.telegram}`, run: () => window.open(PROFILE.telegram, '_blank', 'noopener') },
