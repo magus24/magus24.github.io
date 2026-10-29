@@ -65,12 +65,14 @@ export function NeuralConnections({ sys }: { sys: NeuralSystem }) {
       const depthFac = 1 - (da + db) * 0.28
 
       const hot = active[e]
-      // active edges flash electric only in the machine regime
+      // active edges flash electric in machine regime, golden-white in human regime
       const blu = Math.min(hot * 1.4, 1) * m
-      const heat = intensity * (1.15 + hot * 1.55) * (0.9 + throb * 0.1) * chapter * depthFac
-      const r = heat * (bR - blu * 0.15)
-      const g = heat * (bG - blu * 0.1)
-      const bC = heat * (bB + blu * 0.5)
+      const isCallosum = kind === 2
+      const callosumBoost = isCallosum ? 1.25 : 1.0
+      const heat = intensity * (1.15 + hot * 1.6) * (0.9 + throb * 0.1) * chapter * depthFac * callosumBoost
+      const r = heat * (bR - blu * 0.15 + (isCallosum ? 0.06 : 0))
+      const g = heat * (bG - blu * 0.1 + (isCallosum ? 0.04 : 0))
+      const bC = heat * (bB + blu * 0.5 + (isCallosum ? 0.12 : 0))
       // receiving (inner) end is brighter — edges visibly route toward the core
       const toward = kind === 0 || kind === 3
       const grad = toward ? 0.68 : 0.85
@@ -86,7 +88,7 @@ export function NeuralConnections({ sys }: { sys: NeuralSystem }) {
     const colAttr = geo.getAttribute('color') as THREE.BufferAttribute
     posAttr.needsUpdate = true
     colAttr.needsUpdate = true
-    if (mat.current) mat.current.opacity = Math.max(0.32, Math.min(0.9, sys.edgeOp * 0.9))
+    if (mat.current) mat.current.opacity = Math.max(0.36, Math.min(0.95, sys.edgeOp * 0.95))
   })
 
   return (

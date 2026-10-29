@@ -153,15 +153,19 @@ export function NeuralField({
       groupObj.scale.setScalar(scene.scale * st.r * breath)
 
       if (reducedMotion) {
-        groupObj.rotation.set(0, 0, 0)
+        groupObj.rotation.set(0.32, 0.42, 0)
       } else {
         // the machine net stands still; the human net drifts and follows the cursor
+        // Base isometric anatomical pitch and yaw for the human brain (pitch ~ 0.32 rad, yaw ~ 0.42 rad)
         const life = 1 - ph * 0.85
+        const basePitch = 0.32 * life
+        const baseYaw = 0.42 * life
         const dx = drag ? drag.sx : 0
         const dy = drag ? drag.sy : 0
         groupObj.rotation.y =
-          -t * 0.03 * life + dx + pointer.x * cfg.interactionTilt * 0.6 * (0.35 + st.hover)
+          baseYaw - t * 0.03 * life + dx + pointer.x * cfg.interactionTilt * 0.6 * (0.35 + st.hover)
         groupObj.rotation.x =
+          basePitch +
           Math.sin(t * 0.05) * 0.022 * life +
           dy * 0.7 +
           pointer.y * cfg.interactionTilt * 0.5 * (0.35 + st.hover)
@@ -294,10 +298,17 @@ export function NeuralField({
             st.ripple = 0
             respawn(sig, high)
           } else {
-            glow[node] = Math.min(glow[node] + 0.9, MAX_GLOW)
+            glow[node] = Math.min(glow[node] + 0.95, MAX_GLOW)
             const next = sys.outgoing[node]
-            if (next !== -1) sig.edge = next
-            else respawn(sig, high)
+            if (next !== -1) {
+              sig.edge = next
+              const nextNode = edges[next].b
+              if (nextNode !== sys.sentinel) {
+                glow[nextNode] = Math.min(glow[nextNode] + 0.35, MAX_GLOW)
+              }
+            } else {
+              respawn(sig, high)
+            }
           }
         }
       }

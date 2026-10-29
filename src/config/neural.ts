@@ -56,44 +56,57 @@ export interface NeuralConfig {
   weaveDist: number
   /** human-brain shaping of the surrounding field */
   brain: {
-    /** cerebral half-extents in design units: width, height, length */
+    /** cerebral hemisphere half-extents in design units: width, height, length */
     ax: number
     ay: number
     az: number
+    /** sagittal interhemispheric fissure parameters */
+    fissureWidth: number
+    fissureDepth: number
+    /** cortical folding (gyri/sulci) */
+    gyriFreq: number
+    gyriAmp: number
     /** cerebellum — fraction of nodes placed there plus its position + size */
     cerebellum: { frac: number; y: number; z: number; rx: number; ry: number; rz: number }
+    /** brain stem — vertical neural conduit projecting downward */
+    stem: { frac: number; y: number; z: number; r: number; len: number }
   }
 }
 
 export const NEURAL_CONFIG: NeuralConfig = {
   tiers: {
-    1: { nodes: 64, edges: 58, signals: 3, stars: 90 },
-    2: { nodes: 118, edges: 110, signals: 5, stars: 150 },
-    3: { nodes: 200, edges: 192, signals: 7, stars: 210 },
+    1: { nodes: 100, edges: 110, signals: 4, stars: 100 },
+    2: { nodes: 210, edges: 240, signals: 8, stars: 160 },
+    3: { nodes: 340, edges: 400, signals: 12, stars: 220 },
   },
-  clusters: 7,
+  clusters: 8,
   coreRadius: 0.55,
-  innerCutoff: 0.4,
-  outerR: 2.12,
+  innerCutoff: 0.38,
+  outerR: 2.15,
   breathing: { amp: 0.035, period: 12.5 },
-  syncInterval: [9, 16],
-  signalSpeed: [0.8, 1.4],
-  drift: 0.09,
-  interactionTilt: 0.06,
-  nodeSize: 0.058,
-  nodeActiveSize: 1.4,
+  syncInterval: [8, 14],
+  signalSpeed: [0.9, 1.5],
+  drift: 0.08,
+  interactionTilt: 0.065,
+  nodeSize: 0.052,
+  nodeActiveSize: 1.5,
   nodePulse: 0.16,
-  dendrites: { perNode: 2, length: 0.2, ratio: 0.85 },
-  signalSize: 0.05,
-  sparkDecay: 2.3,
-  accentRatio: 0.2,
-  weave: 3,
-  weaveDist: 0.72,
+  dendrites: { perNode: 3, length: 0.16, ratio: 0.9 },
+  signalSize: 0.052,
+  sparkDecay: 2.2,
+  accentRatio: 0.22,
+  weave: 4,
+  weaveDist: 0.75,
   brain: {
-    ax: 0.95,
-    ay: 0.63,
-    az: 1.05,
-    cerebellum: { frac: 0.1, y: -0.46, z: -0.7, rx: 0.5, ry: 0.25, rz: 0.34 },
+    ax: 0.86,
+    ay: 0.72,
+    az: 1.15,
+    fissureWidth: 0.075,
+    fissureDepth: 0.36,
+    gyriFreq: 8.0,
+    gyriAmp: 0.085,
+    cerebellum: { frac: 0.12, y: -0.48, z: -0.72, rx: 0.52, ry: 0.28, rz: 0.38 },
+    stem: { frac: 0.05, y: -0.68, z: -0.26, r: 0.15, len: 0.42 },
   },
 }
 
