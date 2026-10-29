@@ -52,8 +52,19 @@ export function NeuralField({
   const group = useRef<THREE.Group>(null)
   const sys = useMemo(() => createFieldSystem(spec), [spec])
   const pointer = useMemo(() => ({ x: 0, y: 0 }), [])
+  const lastPointer = useRef({ x: 0, y: 0 })
+  const smoothSpeed = useRef(0)
+  const clickPulse = useRef(0)
   const lastT = useRef(0)
   const pulseTimer = useRef(0)
+
+  // 3D Raycasting to project cursor onto brain's coordinate frame
+  const raycaster = useMemo(() => new THREE.Raycaster(), [])
+  const pointerVec2 = useMemo(() => new THREE.Vector2(), [])
+  const plane = useMemo(() => new THREE.Plane(), [])
+  const mouseWorld = useMemo(() => new THREE.Vector3(), [])
+  const mouseLocal = useMemo(() => new THREE.Vector3(100, 100, 100), [])
+  const tmpForward = useMemo(() => new THREE.Vector3(), [])
 
   const s = useRef<FieldState>({
     r: FIELD_STATES.mind.r,
@@ -67,16 +78,38 @@ export function NeuralField({
   useEffect(() => {
     const onMove = (event: PointerEvent) => {
       pointer.x = (event.clientX / window.innerWidth) * 2 - 1
-      pointer.y = (event.clientY / window.innerHeight) * 2 - 1
+      pointer.y = -(event.clientY / window.innerHeight) * 2 + 1
+    }
+    const onDown = () => {
+      clickPulse.current = 1.0
+      if (corePulse.current) {
+        corePulse.current.target = Math.min(1.6, corePulse.current.target + 0.5)
+      }
     }
     window.addEventListener('pointermove', onMove, { passive: true })
-    return () => window.removeEventListener('pointermove', onMove)
-  }, [pointer])
+    window.addEventListener('pointerdown', onDown, { passive: true })
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerdown', onDown)
+    }
+  }, [pointer, corePulse])
 
   useFrame(({ clock, camera, size }) => {
     const t = clock.getElapsedTime()
     const dt = lastT.current === 0 ? 0.016 : Math.min(t - lastT.current, 0.05)
     lastT.current = t
+
+    // Measure cursor motion velocity
+    const pDist = Math.hypot(pointer.x - lastPointer.current.x, pointer.y - lastPointer.current.y)
+    const rawSpeed = Math.min(3.0, (pDist / Math.max(dt, 0.001)) * 0.15)
+    smoothSpeed.current = dampValue(smoothSpeed.current, rawSpeed, 6.0, dt)
+    lastPointer.current.x = pointer.x
+    lastPointer.current.y = pointer.y
+
+    // Fade click shockwave
+    if (clickPulse.current > 0.001) {
+      clickPulse.current = Math.max(0, clickPulse.current - dt * 1.6)
+    }
 
     const st = s.current
     const chapter = FIELD_STATES[section] ?? FIELD_STATES.mind
@@ -108,29 +141,40 @@ export function NeuralField({
       const fov = camera instanceof THREE.PerspectiveCamera ? camera.fov : 34
       const halfH = Math.tan((fov * Math.PI) / 360) * 4.6
 
-      groupObj.position.x = dampValue(groupObj.position.x, scene.x * halfH * aspect, 3, dt)
-      groupObj.position.y = dampValue(groupObj.position.y, scene.yk * halfH, 3, dt)
-      groupObj.position.z = dampValue(groupObj.position.z, scene.z, 3, dt)
+      // Project cursor ray onto 3D plane of the brain for local shader touch flares
+      pointerVec2.set(pointer.x, pointer.y)
+      raycaster.setFromCamera(pointerVec2, camera)
+      camera.getWorldDirection(tmpForward).negate()
+      plane.setFromNormalAndCoplanarPoint(tmpForward, groupObj.position)
+      if (raycaster.ray.intersectPlane(plane, mouseWorld)) {
+        groupObj.worldToLocal(mouseLocal.copy(mouseWorld))
+      }
+
+      // Parallax in 3D: subtle zero-g liquid floating responding to pointer
+      const parallaxX = scene.x * halfH * aspect + pointer.x * 0.10
+      const parallaxY = scene.yk * halfH + pointer.y * 0.08
+      groupObj.position.x = dampValue(groupObj.position.x, parallaxX, 4.0, dt)
+      groupObj.position.y = dampValue(groupObj.position.y, parallaxY, 4.0, dt)
+      groupObj.position.z = dampValue(groupObj.position.z, scene.z, 3.0, dt)
       groupObj.scale.setScalar(scene.scale * st.r * breath)
 
       if (reducedMotion) {
         groupObj.rotation.set(0.32, 0.42, 0)
       } else {
-        // Human brain has elegant isometric anatomical pitch & yaw; AI core stabilizes upright
         const life = 1 - ph * 0.85
         const basePitch = 0.32 * life
         const baseYaw = 0.42 * life
         const dx = drag ? drag.sx : 0
         const dy = drag ? drag.sy : 0
 
-        groupObj.rotation.y =
-          baseYaw - t * 0.03 * life + dx + pointer.x * cfg.interactionTilt * 0.6 * (0.35 + st.hover)
-        groupObj.rotation.x =
-          basePitch +
-          Math.sin(t * 0.05) * 0.022 * life +
-          dy * 0.7 +
-          pointer.y * cfg.interactionTilt * 0.5 * (0.35 + st.hover)
-        groupObj.rotation.z = -pointer.x * cfg.interactionTilt * 0.4 * life
+        // WOW: Fluid magnetic 3D orientation towards cursor
+        const targetYaw = baseYaw - t * 0.03 * life + dx + pointer.x * 0.48
+        const targetPitch = basePitch + Math.sin(t * 0.05) * 0.02 * life + dy * 0.7 - pointer.y * 0.38
+        const targetRoll = -pointer.x * 0.16
+
+        groupObj.rotation.y = dampValue(groupObj.rotation.y, targetYaw, 5.0, dt)
+        groupObj.rotation.x = dampValue(groupObj.rotation.x, targetPitch, 5.0, dt)
+        groupObj.rotation.z = dampValue(groupObj.rotation.z, targetRoll, 5.0, dt)
       }
       groupObj.updateMatrixWorld(true)
     }
@@ -149,12 +193,22 @@ export function NeuralField({
 
   return (
     <group ref={group}>
-      <BrainCortex sys={sys} morph={s.current.phase} opacity={s.current.op} />
+      <BrainCortex
+        sys={sys}
+        morph={s.current.phase}
+        opacity={s.current.op}
+        mouseLocal={mouseLocal}
+        mouseSpeed={smoothSpeed.current}
+        clickPulse={clickPulse.current}
+      />
       <NeuralCyberEffects
         morph={s.current.phase}
         opacity={s.current.op}
         velocity={velocity}
         reducedMotion={reducedMotion}
+        pointer={pointer}
+        mouseSpeed={smoothSpeed.current}
+        clickPulse={clickPulse.current}
       />
       {!reducedMotion && <TransferPulse active={transferring} />}
     </group>
