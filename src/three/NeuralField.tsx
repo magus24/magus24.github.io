@@ -12,6 +12,7 @@ import { NeuralConnections } from './NeuralConnections'
 import { SignalFlow } from './SignalFlow'
 import { NeuralDendrites } from './NeuralDendrites'
 import { TransferPulse } from './TransferPulse'
+import { BrainCortex } from './BrainCortex'
 
 /** Shared event channel: NeuralField raises pulses, the scene reacts to them. */
 export interface CoreEvent {
@@ -361,6 +362,7 @@ export function NeuralField({
 
   return (
     <group ref={group}>
+      <BrainCortex sys={sys} morph={s.current.phase} opacity={s.current.op} />
       <NeuralDendrites sys={sys} />
       <NeuralNodes sys={sys} />
       <NeuralConnections sys={sys} />
