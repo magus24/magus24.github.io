@@ -128,8 +128,8 @@ export function NeuralCyberEffects({
     const activeColor = warmGold.clone().lerp(cyberCyan, morph)
 
     // 1. Thalamic Photonic Core pulsation inside the brain
-    const corePulse = 1.0 + Math.sin(t * (3.0 + morph * 2.5)) * 0.12
-    const coreAlpha = (0.35 + morph * 0.55) * opacity
+    const corePulse = 1.0 + Math.sin(t * (2.4 + morph * 2.0)) * 0.08
+    const coreAlpha = (0.18 + morph * 0.22) * opacity
 
     if (coreInnerRef.current) {
       coreInnerRef.current.scale.setScalar(corePulse)
@@ -139,12 +139,12 @@ export function NeuralCyberEffects({
     }
 
     if (coreWireRef.current) {
-      coreWireRef.current.rotation.x = t * 0.4 * rotSpeed
-      coreWireRef.current.rotation.y = t * 0.6 * rotSpeed
-      coreWireRef.current.scale.setScalar(corePulse * 1.3)
+      coreWireRef.current.rotation.x = t * 0.3 * rotSpeed
+      coreWireRef.current.rotation.y = t * 0.45 * rotSpeed
+      coreWireRef.current.scale.setScalar(corePulse * 1.22)
       const mat = coreWireRef.current.material as THREE.MeshBasicMaterial
       mat.color.copy(activeColor)
-      mat.opacity = (0.2 + morph * 0.4) * opacity
+      mat.opacity = (0.10 + morph * 0.18) * opacity
     }
 
     // 2. Brainwave EEG Hologram Waves (expanding outward from the brain center)
@@ -152,12 +152,12 @@ export function NeuralCyberEffects({
       const mesh = waveMeshes.current[i]
       if (!mesh) continue
 
-      const wavePhase = ((t * 0.75 + (i * WAVE_PERIOD) / WAVE_COUNT) % WAVE_PERIOD) / WAVE_PERIOD
-      const r = 0.45 + wavePhase * 1.65
+      const wavePhase = ((t * 0.6 + (i * WAVE_PERIOD) / WAVE_COUNT) % WAVE_PERIOD) / WAVE_PERIOD
+      const r = 0.45 + wavePhase * 1.4
       mesh.scale.set(r, r, r)
 
       // Fade in smoothly then fade out near edge
-      const waveAlpha = Math.sin(Math.PI * wavePhase) * (0.15 + morph * 0.35) * opacity
+      const waveAlpha = Math.sin(Math.PI * wavePhase) * (0.08 + morph * 0.15) * opacity
       const mat = mesh.material as THREE.MeshBasicMaterial
       mat.color.copy(activeColor)
       mat.opacity = Math.max(0, waveAlpha)
@@ -165,17 +165,17 @@ export function NeuralCyberEffects({
 
     // 3. Synaptic Stardust drift
     if (stardustRef.current) {
-      stardustRef.current.rotation.y = t * 0.05 * rotSpeed
-      stardustRef.current.rotation.z = Math.sin(t * 0.1) * 0.04
+      stardustRef.current.rotation.y = t * 0.04 * rotSpeed
+      stardustRef.current.rotation.z = Math.sin(t * 0.08) * 0.03
       const pMat = stardustRef.current.material as THREE.PointsMaterial
-      pMat.opacity = (0.4 + morph * 0.45) * opacity
+      pMat.opacity = (0.22 + morph * 0.22) * opacity
     }
 
     // 4. Vertical Conduit & Photons
     const beamActive = Math.max(0, (morph - 0.1) / 0.8)
     if (beamLinesRef.current) {
       const bMat = beamLinesRef.current.material as THREE.LineBasicMaterial
-      bMat.opacity = beamActive * opacity * 0.4
+      bMat.opacity = beamActive * opacity * 0.22
     }
 
     if (beamPhotonsRef.current && !reducedMotion) {
@@ -191,7 +191,7 @@ export function NeuralCyberEffects({
       posAttr.needsUpdate = true
 
       const bpMat = beamPhotonsRef.current.material as THREE.PointsMaterial
-      bpMat.opacity = beamActive * opacity * 0.85
+      bpMat.opacity = beamActive * opacity * 0.5
     }
   })
 

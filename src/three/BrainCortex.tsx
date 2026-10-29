@@ -63,10 +63,10 @@ const CORTEX_FRAGMENT_SHADER = /* glsl */ `
     vec3 rimCol = mix(uColorHumanRim, uColorAiRim, uMorph);
     vec3 baseCol = mix(uColorHumanBase, uColorAiBase, uMorph);
 
-    vec3 finalColor = baseCol * 0.22 + rimCol * (rim * 1.3 + pulse + ridge);
+    vec3 finalColor = baseCol * 0.16 + rimCol * (rim * 1.05 + pulse * 0.75 + ridge);
 
-    // Translucent holographic alpha: low in middle, glowing on silhouette, always visible
-    float alpha = (rim * 0.48 + pulse * 0.45 + ridge * 0.22 + 0.035) * uOpacity;
+    // Translucent holographic alpha: delicate ambient background presence
+    float alpha = (rim * 0.40 + pulse * 0.32 + ridge * 0.16 + 0.025) * uOpacity * 0.75;
 
     if (alpha < 0.005) discard;
 
@@ -115,7 +115,7 @@ export function BrainCortex({ sys, morph, opacity }: BrainCortexProps) {
     if (matRef.current) {
       matRef.current.uniforms.uTime.value = t
       matRef.current.uniforms.uMorph.value = morph
-      matRef.current.uniforms.uOpacity.value = Math.max(0.1, opacity * 0.9)
+      matRef.current.uniforms.uOpacity.value = Math.max(0.1, opacity * 0.75)
     }
 
     if (meshRef.current) {
@@ -124,21 +124,21 @@ export function BrainCortex({ sys, morph, opacity }: BrainCortexProps) {
 
     if (wireMeshRef.current && wireMatRef.current) {
       wireMeshRef.current.visible = true
-      wireMatRef.current.opacity = Math.max(0.04, opacity * (0.11 + morph * 0.08))
+      wireMatRef.current.opacity = Math.max(0.03, opacity * (0.08 + morph * 0.05))
       wireMatRef.current.color.set(morph > 0.4 ? 0x00f0ff : 0xfde68a)
     }
 
     if (pointsRef.current) {
       pointsRef.current.visible = true
       const pMat = pointsRef.current.material as THREE.PointsMaterial
-      pMat.opacity = Math.max(0.25, opacity * (0.7 + morph * 0.25))
+      pMat.opacity = Math.max(0.18, opacity * (0.52 + morph * 0.18))
       pMat.color.set(morph > 0.4 ? 0x38bdf8 : 0xfff1dc)
     }
 
     if (tractsRef.current) {
       tractsRef.current.visible = true
       const tMat = tractsRef.current.material as THREE.LineBasicMaterial
-      tMat.opacity = Math.max(0.3, opacity * 0.65)
+      tMat.opacity = Math.max(0.2, opacity * 0.48)
     }
   })
 

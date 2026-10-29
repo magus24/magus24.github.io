@@ -4,7 +4,7 @@
 
 .app {
   position: relative;
-  z-index: 4;
+  z-index: 10;
   transition: opacity 0.3s var(--ease), filter 0.3s var(--ease);
 }
 
@@ -333,6 +333,7 @@
   text-transform: uppercase;
   max-width: 11em;
   margin-top: clamp(28px, 6vh, 52px);
+  text-shadow: 0 2px 24px rgba(5, 5, 8, 0.95), 0 0 40px rgba(5, 5, 8, 0.9);
 }
 
 .story-headline .line-mask {
@@ -341,7 +342,8 @@
 
 .story-headline .line--alt {
   color: transparent;
-  -webkit-text-stroke: 1px rgba(245, 245, 245, 0.5);
+  -webkit-text-stroke: 1px rgba(245, 245, 245, 0.65);
+  text-shadow: 0 2px 20px rgba(5, 5, 8, 0.9);
 }
 
 .story-lead {
@@ -350,6 +352,7 @@
   color: var(--muted);
   font-size: clamp(1rem, 1.4vw, 1.15rem);
   line-height: 1.6;
+  text-shadow: 0 1px 12px rgba(5, 5, 8, 0.95);
 }
 
 .story-body {
@@ -375,7 +378,9 @@
 
 .story-step,
 .story-quality {
-  background: var(--bg);
+  background: rgba(8, 8, 12, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   padding: clamp(20px, 3vw, 32px);
   position: relative;
 }
@@ -450,6 +455,12 @@
 .execution-stage {
   border-left: 1px solid var(--line);
   padding-left: clamp(16px, 2.5vw, 28px);
+  background: linear-gradient(90deg, rgba(5, 5, 8, 0.82) 0%, rgba(5, 5, 8, 0.45) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding-top: 12px;
+  padding-bottom: 12px;
+  border-radius: 0 4px 4px 0;
 }
 
 .execution-glyph {
